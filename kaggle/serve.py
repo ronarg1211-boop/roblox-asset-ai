@@ -135,33 +135,273 @@ def generate_with_model(prompt: str, task: str = "model") -> Dict[str, Any]:
             logger.error(f"Inference error, falling back: {e}")
 
     # High-intelligence procedural synthesizer fallback
-    clean_name = "".join(w.capitalize() for w in prompt.replace('"', '').split()[:2]) or "RobloxAsset"
+    import re
+    cleaned = re.sub(r'^(create|make|build|generate|design|spawn|give me|render)\s+(a|an|the)?\s*', '', prompt, flags=re.I)
+    cleaned = re.sub(r'^(a|an|the)\s+', '', cleaned, flags=re.I).strip()
+    words = [re.sub(r'[^a-zA-Z0-9]', '', w) for w in cleaned.split() if w]
+    clean_name = "".join(w.capitalize() for w in words[:3]) or "RobloxAsset"
+    p = prompt.lower()
+
     if task == "animation":
+        if "zombie" in p or "undead" in p or "shamble" in p:
+            return {
+                "assetType": "animation",
+                "name": "ZombieShambleWalk",
+                "length": 1.8,
+                "loop": True,
+                "priority": "Movement",
+                "keyframes": [
+                    {
+                        "time": 0.0,
+                        "poses": [
+                            {"boneName": "LeftArm", "position": [0, 0, 0], "rotation": [85, 8, -5]},
+                            {"boneName": "RightArm", "position": [0, 0, 0], "rotation": [95, -6, 4]},
+                            {"boneName": "Head", "position": [0, 0, 0], "rotation": [6, 12, -8]},
+                            {"boneName": "LeftLeg", "position": [0, 0, 0], "rotation": [18, 0, 0]},
+                            {"boneName": "RightLeg", "position": [0, 0, 0], "rotation": [-15, 0, 0]},
+                            {"boneName": "Torso", "position": [0, -0.05, 0], "rotation": [8, 4, -3]}
+                        ]
+                    },
+                    {
+                        "time": 0.9,
+                        "poses": [
+                            {"boneName": "LeftArm", "position": [0, 0, 0], "rotation": [96, 6, -6]},
+                            {"boneName": "RightArm", "position": [0, 0, 0], "rotation": [84, -4, 3]},
+                            {"boneName": "Head", "position": [0, 0, 0], "rotation": [4, 14, -10]},
+                            {"boneName": "LeftLeg", "position": [0, 0, 0], "rotation": [-18, 0, 0]},
+                            {"boneName": "RightLeg", "position": [0, 0, 0], "rotation": [16, 0, 0]},
+                            {"boneName": "Torso", "position": [0, 0.05, 0], "rotation": [5, -3, 2]}
+                        ]
+                    },
+                    {
+                        "time": 1.8,
+                        "poses": [
+                            {"boneName": "LeftArm", "position": [0, 0, 0], "rotation": [85, 8, -5]},
+                            {"boneName": "RightArm", "position": [0, 0, 0], "rotation": [95, -6, 4]},
+                            {"boneName": "Head", "position": [0, 0, 0], "rotation": [6, 12, -8]},
+                            {"boneName": "LeftLeg", "position": [0, 0, 0], "rotation": [18, 0, 0]},
+                            {"boneName": "RightLeg", "position": [0, 0, 0], "rotation": [-15, 0, 0]},
+                            {"boneName": "Torso", "position": [0, -0.05, 0], "rotation": [8, 4, -3]}
+                        ]
+                    }
+                ]
+            }
+        elif "wave" in p:
+            return {
+                "assetType": "animation",
+                "name": "CharacterWave",
+                "length": 1.6,
+                "loop": True,
+                "priority": "Action",
+                "keyframes": [
+                    {"time": 0.0, "poses": [{"boneName": "RightArm", "position": [0, 0, 0], "rotation": [0, 0, 0]}]},
+                    {"time": 0.5, "poses": [{"boneName": "RightArm", "position": [0, 0.4, 0], "rotation": [0, 0, 140]}]},
+                    {"time": 1.0, "poses": [{"boneName": "RightArm", "position": [0, 0.4, 0], "rotation": [0, 20, 160]}]},
+                    {"time": 1.6, "poses": [{"boneName": "RightArm", "position": [0, 0, 0], "rotation": [0, 0, 0]}]}
+                ]
+            }
+        else:
+            return {
+                "assetType": "animation",
+                "name": f"{clean_name}WalkCycle",
+                "length": 1.2,
+                "loop": True,
+                "priority": "Movement",
+                "keyframes": [
+                    {
+                        "time": 0.0,
+                        "poses": [
+                            {"boneName": "LeftLeg", "position": [0, 0, 0], "rotation": [25, 0, 0]},
+                            {"boneName": "RightLeg", "position": [0, 0, 0], "rotation": [-25, 0, 0]},
+                            {"boneName": "LeftArm", "position": [0, 0, 0], "rotation": [-20, 0, 0]},
+                            {"boneName": "RightArm", "position": [0, 0, 0], "rotation": [20, 0, 0]}
+                        ]
+                    },
+                    {
+                        "time": 0.6,
+                        "poses": [
+                            {"boneName": "LeftLeg", "position": [0, 0, 0], "rotation": [-25, 0, 0]},
+                            {"boneName": "RightLeg", "position": [0, 0, 0], "rotation": [25, 0, 0]},
+                            {"boneName": "LeftArm", "position": [0, 0, 0], "rotation": [20, 0, 0]},
+                            {"boneName": "RightArm", "position": [0, 0, 0], "rotation": [-20, 0, 0]}
+                        ]
+                    },
+                    {
+                        "time": 1.2,
+                        "poses": [
+                            {"boneName": "LeftLeg", "position": [0, 0, 0], "rotation": [25, 0, 0]},
+                            {"boneName": "RightLeg", "position": [0, 0, 0], "rotation": [-25, 0, 0]},
+                            {"boneName": "LeftArm", "position": [0, 0, 0], "rotation": [-20, 0, 0]},
+                            {"boneName": "RightArm", "position": [0, 0, 0], "rotation": [20, 0, 0]}
+                        ]
+                    }
+                ]
+            }
+
+    # Model Task
+    if "zombie" in p or "undead" in p or "ghoul" in p:
         return {
-            "assetType": "animation",
-            "name": f"{clean_name}Motion",
-            "length": 1.6,
-            "loop": True,
-            "priority": "Action",
-            "keyframes": [
+            "assetType": "model",
+            "name": "RobloxInfectedZombie",
+            "primaryPartId": "zb_torso",
+            "instances": [
                 {
-                    "time": 0.0,
-                    "easingStyle": "Sine",
-                    "easingDirection": "InOut",
-                    "poses": [{"boneName": "Root", "position": [0, 0, 0], "rotation": [0, 0, 0]}]
+                    "id": "zb_torso",
+                    "name": "Torso",
+                    "className": "Part",
+                    "shape": "Block",
+                    "size": [2.0, 2.0, 1.0],
+                    "position": [0, 3.0, 0],
+                    "rotation": [0, 0, 0],
+                    "color": [60, 95, 100],
+                    "material": "Fabric",
+                    "anchored": True,
+                    "canCollide": True
                 },
                 {
-                    "time": 0.8,
-                    "easingStyle": "Sine",
-                    "easingDirection": "InOut",
-                    "poses": [{"boneName": "Root", "position": [0, 0.4, 0], "rotation": [0, 20, 0]}]
+                    "id": "zb_head",
+                    "name": "Head",
+                    "className": "Part",
+                    "shape": "Block",
+                    "size": [1.2, 1.2, 1.2],
+                    "position": [0, 4.6, 0],
+                    "rotation": [4, 6, -3],
+                    "color": [92, 150, 58],
+                    "material": "SmoothPlastic",
+                    "anchored": True,
+                    "canCollide": True
                 },
                 {
-                    "time": 1.6,
-                    "easingStyle": "Sine",
-                    "easingDirection": "InOut",
-                    "poses": [{"boneName": "Root", "position": [0, 0, 0], "rotation": [0, 0, 0]}]
+                    "id": "zb_eye_l",
+                    "name": "GlowEyeLeft",
+                    "className": "Part",
+                    "shape": "Block",
+                    "size": [0.25, 0.25, 0.1],
+                    "position": [-0.3, 4.7, 0.62],
+                    "rotation": [4, 6, -3],
+                    "color": [240, 45, 30],
+                    "material": "Neon",
+                    "anchored": True,
+                    "canCollide": False
+                },
+                {
+                    "id": "zb_eye_r",
+                    "name": "EyeRight",
+                    "className": "Part",
+                    "shape": "Block",
+                    "size": [0.22, 0.22, 0.1],
+                    "position": [0.3, 4.65, 0.62],
+                    "rotation": [4, 6, -3],
+                    "color": [235, 220, 110],
+                    "material": "SmoothPlastic",
+                    "anchored": True,
+                    "canCollide": False
+                },
+                {
+                    "id": "zb_mouth",
+                    "name": "ZombieSnarl",
+                    "className": "Part",
+                    "shape": "Block",
+                    "size": [0.55, 0.15, 0.1],
+                    "position": [0, 4.22, 0.62],
+                    "rotation": [4, 6, -3],
+                    "color": [35, 25, 20],
+                    "material": "SmoothPlastic",
+                    "anchored": True,
+                    "canCollide": False
+                },
+                {
+                    "id": "zb_arm_l",
+                    "name": "LeftArm",
+                    "className": "Part",
+                    "shape": "Block",
+                    "size": [1.0, 2.0, 1.0],
+                    "position": [-1.5, 3.0, 1.0],
+                    "rotation": [90, 5, 0],
+                    "color": [92, 150, 58],
+                    "material": "SmoothPlastic",
+                    "anchored": True,
+                    "canCollide": True
+                },
+                {
+                    "id": "zb_arm_r",
+                    "name": "RightArm",
+                    "className": "Part",
+                    "shape": "Block",
+                    "size": [1.0, 2.0, 1.0],
+                    "position": [1.5, 3.0, 1.0],
+                    "rotation": [90, -5, 0],
+                    "color": [92, 150, 58],
+                    "material": "SmoothPlastic",
+                    "anchored": True,
+                    "canCollide": True
+                },
+                {
+                    "id": "zb_leg_l",
+                    "name": "LeftLeg",
+                    "className": "Part",
+                    "shape": "Block",
+                    "size": [1.0, 2.0, 1.0],
+                    "position": [-0.5, 1.0, 0],
+                    "rotation": [0, 0, 0],
+                    "color": [42, 48, 65],
+                    "material": "Fabric",
+                    "anchored": True,
+                    "canCollide": True
+                },
+                {
+                    "id": "zb_leg_r",
+                    "name": "RightLeg",
+                    "className": "Part",
+                    "shape": "Block",
+                    "size": [1.0, 2.0, 1.0],
+                    "position": [0.5, 1.0, 0],
+                    "rotation": [0, 0, 0],
+                    "color": [42, 48, 65],
+                    "material": "Fabric",
+                    "anchored": True,
+                    "canCollide": True
+                },
+                {
+                    "id": "zb_ribs",
+                    "name": "ExposedRibcage",
+                    "className": "Part",
+                    "shape": "Block",
+                    "size": [0.7, 0.9, 0.2],
+                    "position": [-0.35, 2.9, 0.52],
+                    "rotation": [0, 0, 0],
+                    "color": [238, 235, 225],
+                    "material": "SmoothPlastic",
+                    "anchored": True,
+                    "canCollide": False
                 }
+            ]
+        }
+    elif "character" in p or "human" in p or "npc" in p or "dummy" in p:
+        return {
+            "assetType": "model",
+            "name": "RobloxHumanoidRig",
+            "primaryPartId": "hr_torso",
+            "instances": [
+                {"id": "hr_torso", "name": "Torso", "className": "Part", "shape": "Block", "size": [2.0, 2.0, 1.0], "position": [0, 3.0, 0], "rotation": [0, 0, 0], "color": [0, 162, 255], "material": "SmoothPlastic", "anchored": True, "canCollide": True},
+                {"id": "hr_head", "name": "Head", "className": "Part", "shape": "Block", "size": [1.2, 1.2, 1.2], "position": [0, 4.6, 0], "rotation": [0, 0, 0], "color": [245, 205, 47], "material": "SmoothPlastic", "anchored": True, "canCollide": True},
+                {"id": "hr_arm_l", "name": "LeftArm", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "position": [-1.5, 3.0, 0], "rotation": [0, 0, 0], "color": [245, 205, 47], "material": "SmoothPlastic", "anchored": True, "canCollide": True},
+                {"id": "hr_arm_r", "name": "RightArm", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "position": [1.5, 3.0, 0], "rotation": [0, 0, 0], "color": [245, 205, 47], "material": "SmoothPlastic", "anchored": True, "canCollide": True},
+                {"id": "hr_leg_l", "name": "LeftLeg", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "position": [-0.5, 1.0, 0], "rotation": [0, 0, 0], "color": [40, 127, 71], "material": "SmoothPlastic", "anchored": True, "canCollide": True},
+                {"id": "hr_leg_r", "name": "RightLeg", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "position": [0.5, 1.0, 0], "rotation": [0, 0, 0], "color": [40, 127, 71], "material": "SmoothPlastic", "anchored": True, "canCollide": True}
+            ]
+        }
+    elif "sword" in p or "blade" in p or "weapon" in p:
+        return {
+            "assetType": "model",
+            "name": f"{clean_name}Sword",
+            "primaryPartId": "sw_grip",
+            "instances": [
+                {"id": "sw_grip", "name": "HandleGrip", "className": "Part", "shape": "Cylinder", "size": [0.35, 1.4, 0.35], "position": [0, 0.7, 0], "rotation": [0, 0, 0], "color": [90, 55, 35], "material": "Fabric", "anchored": True, "canCollide": True},
+                {"id": "sw_pommel", "name": "Pommel", "className": "Part", "shape": "Ball", "size": [0.6, 0.6, 0.6], "position": [0, -0.1, 0], "rotation": [0, 0, 0], "color": [220, 180, 50], "material": "Metal", "anchored": True, "canCollide": True},
+                {"id": "sw_guard", "name": "Crossguard", "className": "Part", "shape": "Block", "size": [2.4, 0.3, 0.6], "position": [0, 1.45, 0], "rotation": [0, 0, 0], "color": [200, 160, 40], "material": "Metal", "anchored": True, "canCollide": True},
+                {"id": "sw_blade", "name": "Blade", "className": "Part", "shape": "Block", "size": [0.65, 4.6, 0.15], "position": [0, 3.9, 0], "rotation": [0, 0, 0], "color": [215, 220, 225], "material": "Metal", "anchored": True, "canCollide": True},
+                {"id": "sw_tip", "name": "BladeTip", "className": "WedgePart", "shape": "Wedge", "size": [0.65, 1.0, 0.15], "position": [0, 6.7, 0], "rotation": [0, 0, 0], "color": [225, 230, 235], "material": "Metal", "anchored": True, "canCollide": True}
             ]
         }
     else:
@@ -170,32 +410,10 @@ def generate_with_model(prompt: str, task: str = "model") -> Dict[str, Any]:
             "name": clean_name,
             "primaryPartId": "p_core",
             "instances": [
-                {
-                    "id": "p_core",
-                    "name": "BaseFoundation",
-                    "className": "Part",
-                    "shape": "Block",
-                    "size": [4.0, 2.0, 4.0],
-                    "position": [0, 1.0, 0],
-                    "rotation": [0, 0, 0],
-                    "color": [100, 105, 115],
-                    "material": "Metal",
-                    "anchored": True,
-                    "canCollide": True
-                },
-                {
-                    "id": "p_trim",
-                    "name": "SuperstructureAccent",
-                    "className": "Part",
-                    "shape": "Block",
-                    "size": [3.6, 1.4, 3.6],
-                    "position": [0, 2.7, 0],
-                    "rotation": [0, 0, 0],
-                    "color": [0, 162, 255],
-                    "material": "SmoothPlastic",
-                    "anchored": True,
-                    "canCollide": True
-                }
+                {"id": "p_core", "name": f"{clean_name}Base", "className": "Part", "shape": "Block", "size": [4.0, 1.2, 4.0], "position": [0, 0.6, 0], "rotation": [0, 0, 0], "color": [80, 85, 95], "material": "Cobblestone", "anchored": True, "canCollide": True},
+                {"id": "p_body", "name": f"{clean_name}Body", "className": "Part", "shape": "Block", "size": [3.4, 2.6, 3.4], "position": [0, 2.5, 0], "rotation": [0, 0, 0], "color": [110, 70, 45], "material": "WoodPlanks", "anchored": True, "canCollide": True},
+                {"id": "p_trim", "name": f"{clean_name}Trim", "className": "Part", "shape": "Block", "size": [3.6, 0.4, 3.6], "position": [0, 3.9, 0], "rotation": [0, 0, 0], "color": [220, 180, 50], "material": "Metal", "anchored": True, "canCollide": True},
+                {"id": "p_core_glow", "name": f"{clean_name}GlowCore", "className": "Part", "shape": "Ball", "size": [1.0, 1.0, 1.0], "position": [0, 4.6, 0], "rotation": [0, 0, 0], "color": [0, 200, 255], "material": "Neon", "anchored": True, "canCollide": False}
             ]
         }
 

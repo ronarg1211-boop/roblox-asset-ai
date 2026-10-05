@@ -124,13 +124,19 @@ export class RobloxAssetCatalog {
     }
 
     // 6. CHARACTERS & CREATURES
+    if (p.includes('zombie') || p.includes('undead') || p.includes('ghoul') || p.includes('infected') || p.includes('walker')) {
+      return this.buildZombie(iteration);
+    }
+    if (p.includes('skeleton') || p.includes('skull') || p.includes('bone warrior')) {
+      return this.buildSkeleton(iteration);
+    }
     if (p.includes('robot') || p.includes('mech') || p.includes('cyborg')) {
       return this.buildMech(iteration);
     }
-    if (p.includes('character') || p.includes('human') || p.includes('npc') || p.includes('dummy')) {
+    if (p.includes('character') || p.includes('human') || p.includes('npc') || p.includes('dummy') || p.includes('noob') || p.includes('person') || p.includes('player') || p.includes('avatar')) {
       return this.buildHumanoid(iteration);
     }
-    if (p.includes('golem') || p.includes('monster')) {
+    if (p.includes('golem') || p.includes('monster') || p.includes('creature') || p.includes('beast')) {
       return this.buildGolem(iteration);
     }
 
@@ -1521,6 +1527,397 @@ export class RobloxAssetCatalog {
     return { name: 'RobloxHumanoidRig', instances, primaryPartId: 'hr_torso' };
   }
 
+  private static buildZombie(iteration: number): AssetGeneratorResult {
+    const instances: RobloxInstanceIR[] = [];
+
+    // Classic Roblox R6 Zombie Torso (2 x 2 x 1 studs) - Tattered dirty shirt
+    const torso: RobloxPartIR = {
+      id: 'zb_torso',
+      name: 'Torso',
+      className: 'Part',
+      shape: 'Block',
+      size: [2.0, 2.0, 1.0],
+      position: [0, 3.0, 0],
+      rotation: [0, 0, 0],
+      color: [60, 95, 100], // Decay Teal / Dirty Shirt
+      material: 'Fabric',
+      anchored: true,
+      canCollide: true,
+    };
+    instances.push(torso);
+
+    // Decayed Zombie Head (1.2 x 1.2 x 1.2) - Rotten Green
+    instances.push({
+      id: 'zb_head',
+      name: 'Head',
+      className: 'Part',
+      shape: 'Block',
+      size: [1.2, 1.2, 1.2],
+      position: [0, 4.6, 0],
+      rotation: [4, 6, -3], // Characteristic tilted zombie head
+      color: [92, 150, 58], // Iconic Roblox Zombie Rotten Green
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: true,
+    });
+
+    // Glowing Bloodshot Left Eye
+    instances.push({
+      id: 'zb_eye_l',
+      name: 'GlowEyeLeft',
+      className: 'Part',
+      shape: 'Block',
+      size: [0.25, 0.25, 0.1],
+      position: [-0.3, 4.7, 0.62],
+      rotation: [4, 6, -3],
+      color: [240, 45, 30], // Menacing Glowing Red Eye
+      material: 'Neon',
+      anchored: true,
+      canCollide: false,
+    });
+
+    // Sunken Sickly Right Eye
+    instances.push({
+      id: 'zb_eye_r',
+      name: 'EyeRight',
+      className: 'Part',
+      shape: 'Block',
+      size: [0.22, 0.22, 0.1],
+      position: [0.3, 4.65, 0.62],
+      rotation: [4, 6, -3],
+      color: [235, 220, 110], // Pale Sickly Yellow Pupil
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: false,
+    });
+
+    // Decaying Snarl Mouth
+    instances.push({
+      id: 'zb_mouth',
+      name: 'ZombieSnarl',
+      className: 'Part',
+      shape: 'Block',
+      size: [0.55, 0.15, 0.1],
+      position: [0, 4.22, 0.62],
+      rotation: [4, 6, -3],
+      color: [35, 25, 20],
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: false,
+    });
+
+    // Classic Roblox Zombie Left Arm - Raised Straight Forward (90 deg on X)
+    instances.push({
+      id: 'zb_arm_l',
+      name: 'LeftArm',
+      className: 'Part',
+      shape: 'Block',
+      size: [1.0, 2.0, 1.0],
+      position: [-1.5, 3.0, 1.0],
+      rotation: [90, 5, 0],
+      color: [92, 150, 58], // Rotten Green Skin
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: true,
+    });
+
+    // Classic Roblox Zombie Right Arm - Raised Straight Forward (90 deg on X)
+    instances.push({
+      id: 'zb_arm_r',
+      name: 'RightArm',
+      className: 'Part',
+      shape: 'Block',
+      size: [1.0, 2.0, 1.0],
+      position: [1.5, 3.0, 1.0],
+      rotation: [90, -5, 0],
+      color: [92, 150, 58], // Rotten Green Skin
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: true,
+    });
+
+    // Left Leg - Dirty Ripped Trousers
+    instances.push({
+      id: 'zb_leg_l',
+      name: 'LeftLeg',
+      className: 'Part',
+      shape: 'Block',
+      size: [1.0, 2.0, 1.0],
+      position: [-0.5, 1.0, 0],
+      rotation: [0, 0, 0],
+      color: [42, 48, 65], // Dark Tattered Blue
+      material: 'Fabric',
+      anchored: true,
+      canCollide: true,
+    });
+
+    // Right Leg - Dirty Ripped Trousers
+    instances.push({
+      id: 'zb_leg_r',
+      name: 'RightLeg',
+      className: 'Part',
+      shape: 'Block',
+      size: [1.0, 2.0, 1.0],
+      position: [0.5, 1.0, 0],
+      rotation: [0, 0, 0],
+      color: [42, 48, 65],
+      material: 'Fabric',
+      anchored: true,
+      canCollide: true,
+    });
+
+    // Iteration 2: Ripped Clothing & Exposed Skeletal Ribcage
+    if (iteration >= 2) {
+      // Exposed Bone Ribs
+      instances.push({
+        id: 'zb_ribs',
+        name: 'ExposedRibcage',
+        className: 'Part',
+        shape: 'Block',
+        size: [0.7, 0.9, 0.2],
+        position: [-0.35, 2.9, 0.52],
+        rotation: [0, 0, 0],
+        color: [238, 235, 225], // Bone White
+        material: 'SmoothPlastic',
+        anchored: true,
+        canCollide: false,
+      });
+
+      // Torn Pants Knee Patch exposing decayed green skin
+      instances.push({
+        id: 'zb_knee_patch',
+        name: 'TornKneeRot',
+        className: 'Part',
+        shape: 'Block',
+        size: [0.55, 0.45, 0.15],
+        position: [0.5, 1.15, 0.52],
+        rotation: [0, 0, 0],
+        color: [92, 150, 58],
+        material: 'SmoothPlastic',
+        anchored: true,
+        canCollide: false,
+      });
+
+      // Toxic Slime Drool
+      instances.push({
+        id: 'zb_slime',
+        name: 'ToxicSlimeDrip',
+        className: 'Part',
+        shape: 'Ball',
+        size: [0.25, 0.35, 0.25],
+        position: [0.2, 4.0, 0.65],
+        rotation: [0, 0, 0],
+        color: [80, 255, 40], // Glowing Radioactive Neon Slime
+        material: 'Neon',
+        anchored: true,
+        canCollide: false,
+      });
+    }
+
+    // Iteration 3: Exposed Brain & Broken Rusty Shackle
+    if (iteration >= 3) {
+      // Exposed Brain Matter on Cranium
+      instances.push({
+        id: 'zb_brain',
+        name: 'ExposedBrain',
+        className: 'Part',
+        shape: 'Block',
+        size: [0.55, 0.35, 0.6],
+        position: [0.35, 5.25, -0.1],
+        rotation: [0, 8, -5],
+        color: [175, 65, 75], // Raw Brain Tissue
+        material: 'SmoothPlastic',
+        anchored: true,
+        canCollide: false,
+      });
+
+      // Broken Iron Wrist Shackle
+      instances.push({
+        id: 'zb_shackle',
+        name: 'BrokenPrisonerShackle',
+        className: 'Part',
+        shape: 'Cylinder',
+        size: [1.2, 0.3, 1.2],
+        position: [-1.5, 3.0, 1.8],
+        rotation: [0, 0, 90],
+        color: [55, 50, 48],
+        material: 'Metal',
+        anchored: true,
+        canCollide: false,
+      });
+    }
+
+    return { name: 'RobloxInfectedZombie', instances, primaryPartId: 'zb_torso' };
+  }
+
+  private static buildSkeleton(iteration: number): AssetGeneratorResult {
+    const instances: RobloxInstanceIR[] = [];
+
+    // Spine Column
+    const spine: RobloxPartIR = {
+      id: 'sk_spine',
+      name: 'SpinalColumn',
+      className: 'Part',
+      shape: 'Cylinder',
+      size: [0.45, 2.0, 0.45],
+      position: [0, 3.0, 0],
+      rotation: [0, 0, 0],
+      color: [235, 230, 220],
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: true,
+    };
+    instances.push(spine);
+
+    // Ribcage
+    instances.push({
+      id: 'sk_ribs',
+      name: 'Ribcage',
+      className: 'Part',
+      shape: 'Block',
+      size: [1.8, 1.4, 0.9],
+      position: [0, 3.3, 0],
+      rotation: [0, 0, 0],
+      color: [240, 238, 230],
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: true,
+    });
+
+    // Skull
+    instances.push({
+      id: 'sk_skull',
+      name: 'Skull',
+      className: 'Part',
+      shape: 'Block',
+      size: [1.1, 1.1, 1.1],
+      position: [0, 4.6, 0],
+      rotation: [0, 0, 0],
+      color: [245, 240, 230],
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: true,
+    });
+
+    // Eye Sockets
+    instances.push({
+      id: 'sk_eye_l',
+      name: 'LeftSocket',
+      className: 'Part',
+      shape: 'Block',
+      size: [0.25, 0.25, 0.1],
+      position: [-0.28, 4.65, 0.58],
+      rotation: [0, 0, 0],
+      color: [15, 15, 20],
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: false,
+    });
+    instances.push({
+      id: 'sk_eye_r',
+      name: 'RightSocket',
+      className: 'Part',
+      shape: 'Block',
+      size: [0.25, 0.25, 0.1],
+      position: [0.28, 4.65, 0.58],
+      rotation: [0, 0, 0],
+      color: [15, 15, 20],
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: false,
+    });
+
+    // Pelvis
+    instances.push({
+      id: 'sk_pelvis',
+      name: 'Pelvis',
+      className: 'Part',
+      shape: 'Block',
+      size: [1.4, 0.45, 0.8],
+      position: [0, 2.0, 0],
+      rotation: [0, 0, 0],
+      color: [230, 225, 215],
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: true,
+    });
+
+    // Arm Bones
+    instances.push({
+      id: 'sk_arm_l',
+      name: 'LeftArmBone',
+      className: 'Part',
+      shape: 'Cylinder',
+      size: [0.35, 1.9, 0.35],
+      position: [-1.4, 3.0, 0],
+      rotation: [0, 0, 0],
+      color: [235, 230, 220],
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: true,
+    });
+    instances.push({
+      id: 'sk_arm_r',
+      name: 'RightArmBone',
+      className: 'Part',
+      shape: 'Cylinder',
+      size: [0.35, 1.9, 0.35],
+      position: [1.4, 3.0, 0],
+      rotation: [0, 0, 0],
+      color: [235, 230, 220],
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: true,
+    });
+
+    // Leg Bones
+    instances.push({
+      id: 'sk_leg_l',
+      name: 'LeftLegBone',
+      className: 'Part',
+      shape: 'Cylinder',
+      size: [0.38, 2.0, 0.38],
+      position: [-0.5, 0.95, 0],
+      rotation: [0, 0, 0],
+      color: [235, 230, 220],
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: true,
+    });
+    instances.push({
+      id: 'sk_leg_r',
+      name: 'RightLegBone',
+      className: 'Part',
+      shape: 'Cylinder',
+      size: [0.38, 2.0, 0.38],
+      position: [0.5, 0.95, 0],
+      rotation: [0, 0, 0],
+      color: [235, 230, 220],
+      material: 'SmoothPlastic',
+      anchored: true,
+      canCollide: true,
+    });
+
+    if (iteration >= 2) {
+      // Glowing Cursed Soul Core in chest
+      instances.push({
+        id: 'sk_soul',
+        name: 'CursedSoulCore',
+        className: 'Part',
+        shape: 'Ball',
+        size: [0.5, 0.5, 0.5],
+        position: [0, 3.2, 0.1],
+        rotation: [0, 0, 0],
+        color: [0, 220, 255],
+        material: 'Neon',
+        anchored: true,
+        canCollide: false,
+      });
+    }
+
+    return { name: 'CursedSkeletonWarrior', instances, primaryPartId: 'sk_spine' };
+  }
+
   private static buildMech(iteration: number): AssetGeneratorResult {
     const instances: RobloxInstanceIR[] = [];
 
@@ -1734,8 +2131,12 @@ export class RobloxAssetCatalog {
   // ============================================================
 
   private static buildParametricAsset(prompt: string, iteration: number): AssetGeneratorResult {
-    const instances: RobloxInstanceIR[] = [];
-    const words = prompt.replace(/[^a-zA-Z0-9\s]/g, '').trim().split(/\s+/);
+    const cleaned = prompt
+      .replace(/^(create|make|build|generate|design|spawn|give me|render)\s+(a|an|the)?\s*/i, '')
+      .replace(/^(a|an|the)\s+/i, '')
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .trim();
+    const words = cleaned.split(/\s+/).filter(Boolean);
     const cleanName = words.slice(0, 2).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('') || 'CustomRobloxAsset';
 
     // Semantic Material & Color Inference

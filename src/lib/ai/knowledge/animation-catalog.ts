@@ -9,6 +9,9 @@ export class AnimationCatalog {
   public static matchAndGenerate(prompt: string): RobloxAnimationIR {
     const p = prompt.toLowerCase();
 
+    if (p.includes('zombie') || p.includes('undead') || p.includes('shamble')) {
+      return this.buildZombieShambleAnimation();
+    }
     if (p.includes('wave') || p.includes('waving') || p.includes('hello')) {
       return this.buildWaveAnimation();
     }
@@ -523,6 +526,79 @@ export class AnimationCatalog {
           name: 'SwingWideOpen',
           poses: [
             { boneName: 'ChestLid', position: [0, 0.2, -0.8], rotation: [-110, 0, 0], easingStyle: 'Bounce', easingDirection: 'Out' },
+          ],
+        },
+      ],
+    };
+  }
+
+  private static buildZombieShambleAnimation(): RobloxAnimationIR {
+    return {
+      assetType: 'animation',
+      name: 'ZombieShambleWalk',
+      length: 1.8,
+      loop: true,
+      priority: 'Movement',
+      fps: 30,
+      keyframes: [
+        {
+          time: 0.0,
+          name: 'ZombieShambleStart',
+          poses: [
+            { boneName: 'LeftArm', position: [0, 0, 0], rotation: [85, 8, -5], easingStyle: 'Sine', easingDirection: 'InOut' },
+            { boneName: 'RightArm', position: [0, 0, 0], rotation: [95, -6, 4], easingStyle: 'Sine', easingDirection: 'InOut' },
+            { boneName: 'Head', position: [0, 0, 0], rotation: [6, 12, -8] },
+            { boneName: 'LeftLeg', position: [0, 0, 0], rotation: [18, 0, 0] },
+            { boneName: 'RightLeg', position: [0, 0, 0], rotation: [-15, 0, 0] },
+            { boneName: 'Torso', position: [0, -0.05, 0], rotation: [8, 4, -3] },
+          ],
+        },
+        {
+          time: 0.45,
+          name: 'ZombieLimpStep',
+          poses: [
+            { boneName: 'LeftArm', position: [0, 0.05, 0], rotation: [92, 4, -3] },
+            { boneName: 'RightArm', position: [0, -0.05, 0], rotation: [88, -10, 6] },
+            { boneName: 'Head', position: [0, -0.08, 0], rotation: [10, 8, -5] },
+            { boneName: 'LeftLeg', position: [0, 0.2, 0], rotation: [-22, 0, 0] },
+            { boneName: 'RightLeg', position: [0, 0, 0], rotation: [20, 0, 0] },
+            { boneName: 'Torso', position: [0, 0.05, 0], rotation: [5, -3, 2] },
+          ],
+        },
+        {
+          time: 0.9,
+          name: 'ZombieMidShamble',
+          poses: [
+            { boneName: 'LeftArm', position: [0, 0, 0], rotation: [96, 6, -6] },
+            { boneName: 'RightArm', position: [0, 0, 0], rotation: [84, -4, 3] },
+            { boneName: 'Head', position: [0, 0, 0], rotation: [4, 14, -10] },
+            { boneName: 'LeftLeg', position: [0, 0, 0], rotation: [15, 0, 0] },
+            { boneName: 'RightLeg', position: [0, 0, 0], rotation: [-18, 0, 0] },
+            { boneName: 'Torso', position: [0, -0.05, 0], rotation: [8, 4, -3] },
+          ],
+        },
+        {
+          time: 1.35,
+          name: 'ZombieLimpRebound',
+          poses: [
+            { boneName: 'LeftArm', position: [0, -0.05, 0], rotation: [86, 10, -4] },
+            { boneName: 'RightArm', position: [0, 0.05, 0], rotation: [92, -8, 5] },
+            { boneName: 'Head', position: [0, 0.05, 0], rotation: [8, 6, -4] },
+            { boneName: 'LeftLeg', position: [0, 0, 0], rotation: [-16, 0, 0] },
+            { boneName: 'RightLeg', position: [0, 0.15, 0], rotation: [16, 0, 0] },
+            { boneName: 'Torso', position: [0, 0, 0], rotation: [6, 2, -1] },
+          ],
+        },
+        {
+          time: 1.8,
+          name: 'ZombieLoop',
+          poses: [
+            { boneName: 'LeftArm', position: [0, 0, 0], rotation: [85, 8, -5] },
+            { boneName: 'RightArm', position: [0, 0, 0], rotation: [95, -6, 4] },
+            { boneName: 'Head', position: [0, 0, 0], rotation: [6, 12, -8] },
+            { boneName: 'LeftLeg', position: [0, 0, 0], rotation: [18, 0, 0] },
+            { boneName: 'RightLeg', position: [0, 0, 0], rotation: [-15, 0, 0] },
+            { boneName: 'Torso', position: [0, -0.05, 0], rotation: [8, 4, -3] },
           ],
         },
       ],
