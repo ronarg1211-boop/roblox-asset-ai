@@ -38,7 +38,10 @@ export class KaggleLLMProvider implements AIProvider {
 
       const res = await fetch(`${this.endpointUrl}/api/generate-model`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
         body: JSON.stringify({ prompt, iteration, referenceImage }),
         signal: controller.signal,
       });
@@ -76,7 +79,10 @@ export class KaggleLLMProvider implements AIProvider {
 
       const res = await fetch(`${this.endpointUrl}/api/generate-animation`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
         body: JSON.stringify({ prompt, modelIR }),
         signal: controller.signal,
       });
@@ -102,7 +108,10 @@ export class KaggleLLMProvider implements AIProvider {
 
       const res = await fetch(`${this.endpointUrl}/api/critique`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
         body: JSON.stringify({
           prompt: request.prompt,
           iterationIndex: request.iterationIndex,
