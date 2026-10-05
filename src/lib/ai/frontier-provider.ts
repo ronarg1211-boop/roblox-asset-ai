@@ -16,12 +16,17 @@ import {
 import { ProceduralProvider } from './procedural-provider';
 
 interface LLMRoute {
+  id: string;
   name: string;
   url: string;
   model: string;
-  getKey: () => string | undefined;
+  apiKey: string;
   headers?: Record<string, string>;
 }
+
+// Global state across requests in the server process
+const routeCooldowns = new Map<string, number>();
+let globalRouteCursor = 0;
 
 export class FrontierThinkingProvider implements AIProvider {
   public readonly providerName = 'Frontier 70B Thinking Engine';
@@ -31,66 +36,78 @@ export class FrontierThinkingProvider implements AIProvider {
     this.fallback = new ProceduralProvider();
   }
 
-  private getFirstKey(envVarName: string): string | undefined {
+  private getAllKeys(envVarName: string): string[] {
     const raw = process.env[envVarName];
-    if (!raw) return undefined;
-    const parts = raw.split(',').map((s) => s.trim()).filter(Boolean);
-    return parts[0];
+    if (!raw) return [];
+    return raw.split(',').map((s) => s.trim()).filter(Boolean);
   }
 
-  private getRoutes(): LLMRoute[] {
-    return [
-      {
-        name: 'Groq Qwen-3.8-27B (LPU Fast)',
+  private buildAvailableRoutes(): LLMRoute[] {
+    const routes: LLMRoute[] = [];
+
+    // 1. Groq Keys (Multiple keys from GROQ_API_KEYS / GROQ_API_KEY)
+    const groqKeys = Array.from(new Set([
+      ...this.getAllKeys('GROQ_API_KEYS'),
+      ...(process.env.GROQ_API_KEY ? [process.env.GROQ_API_KEY.trim()] : [])
+    ]));
+
+    // Distribute Groq keys across Qwen 27B and GPT-OSS 120B
+    for (let i = 0; i < groqKeys.length; i++) {
+      const k = groqKeys[i];
+      routes.push({
+        id: `groq_k${i + 1}_qwen`,
+        name: `Groq Key #${i + 1} [Qwen-3.8-27B]`,
         url: 'https://api.groq.com/openai/v1/chat/completions',
         model: 'qwen/qwen3.8-27b',
-        getKey: () => this.getFirstKey('GROQ_API_KEYS') || process.env.GROQ_API_KEY,
-      },
-      {
-        name: 'Cerebras Qwen-3.8-27B (Ultra-Fast)',
-        url: 'https://api.cerebras.ai/v1/chat/completions',
-        model: 'qwen-3.8-27b',
-        getKey: () => this.getFirstKey('CEREBRAS_API_KEYS'),
-      },
-      {
-        name: 'OpenRouter Llama-3.3-70B',
+        apiKey: k,
+      });
+      routes.push({
+        id: `groq_k${i + 1}_gpt120b`,
+        name: `Groq Key #${i + 1} [GPT-OSS-120B]`,
+        url: 'https://api.groq.com/openai/v1/chat/completions',
+        model: 'openai/gpt-oss-120b',
+        apiKey: k,
+      });
+    }
+
+    // 2. OpenRouter Keys (Multiple keys from OPENROUTER_API_KEYS)
+    const openrouterKeys = Array.from(new Set([
+      ...this.getAllKeys('OPENROUTER_API_KEYS'),
+      ...(process.env.OPENROUTER_API_KEY ? [process.env.OPENROUTER_API_KEY.trim()] : [])
+    ]));
+
+    for (let i = 0; i < openrouterKeys.length; i++) {
+      const k = openrouterKeys[i];
+      routes.push({
+        id: `openrouter_k${i + 1}_llama70b`,
+        name: `OpenRouter Key #${i + 1} [Llama-3.3-70B]`,
         url: 'https://openrouter.ai/api/v1/chat/completions',
         model: 'meta-llama/llama-3.3-70b-instruct',
-        getKey: () => this.getFirstKey('OPENROUTER_API_KEYS') || process.env.OPENROUTER_API_KEY,
+        apiKey: k,
         headers: {
           'HTTP-Referer': 'https://roblox-asset-ai.local',
           'X-Title': 'Roblox Asset AI',
         },
-      },
-      {
-        name: 'DeepInfra Llama-3.3-70B',
-        url: 'https://api.deepinfra.com/v1/openai/chat/completions',
-        model: 'meta-llama/Llama-3.3-70B-Instruct',
-        getKey: () => this.getFirstKey('DEEPINFRA_API_KEYS'),
-      },
-      {
-        name: 'SambaNova Llama-3.3-70B',
-        url: 'https://api.sambanova.ai/v1/chat/completions',
-        model: 'Meta-Llama-3.3-70B-Instruct',
-        getKey: () => this.getFirstKey('SAMBANOVA_API_KEYS'),
-      },
-      {
-        name: 'Together Llama-3.3-70B',
-        url: 'https://api.together.xyz/v1/chat/completions',
-        model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
-        getKey: () => this.getFirstKey('TOGETHER_API_KEYS'),
-      },
-      {
-        name: 'Mistral Large',
-        url: 'https://api.mistral.ai/v1/chat/completions',
-        model: 'mistral-large-latest',
-        getKey: () => this.getFirstKey('MISTRAL_API_KEYS'),
-      },
-    ];
+      });
+    }
+
+    // 3. Ultra-fast lightweight fallback on Groq
+    for (let i = 0; i < groqKeys.length; i++) {
+      const k = groqKeys[i];
+      routes.push({
+        id: `groq_k${i + 1}_gpt20b`,
+        name: `Groq Key #${i + 1} [GPT-OSS-20B]`,
+        url: 'https://api.groq.com/openai/v1/chat/completions',
+        model: 'openai/gpt-oss-20b',
+        apiKey: k,
+      });
+    }
+
+    return routes;
   }
 
   /**
-   * Resiliently executes an LLM call across provider cascade
+   * Resiliently executes an LLM call across provider cascade with auto-rotation on 429
    */
   private async executeLLMCascade(
     systemPrompt: string,
@@ -98,21 +115,38 @@ export class FrontierThinkingProvider implements AIProvider {
     temperature = 0.3,
     maxTokens = 2500
   ): Promise<any | null> {
-    const routes = this.getRoutes();
+    const allRoutes = this.buildAvailableRoutes();
+    if (allRoutes.length === 0) return null;
 
-    for (const route of routes) {
-      const apiKey = route.getKey();
-      if (!apiKey) continue;
+    const now = Date.now();
+    // Filter out routes currently in cooldown
+    const activeRoutes = allRoutes.filter((r) => {
+      const cd = routeCooldowns.get(r.id) || 0;
+      return cd <= now;
+    });
 
+    const candidateRoutes = activeRoutes.length > 0 ? activeRoutes : allRoutes;
+
+    // Round-robin rotate starting route to distribute token load across keys
+    const startIndex = globalRouteCursor % candidateRoutes.length;
+    globalRouteCursor = (globalRouteCursor + 1) % candidateRoutes.length;
+
+    const orderedRoutes = [
+      ...candidateRoutes.slice(startIndex),
+      ...candidateRoutes.slice(0, startIndex),
+    ];
+
+    for (const route of orderedRoutes) {
       try {
+        console.log(`[FrontierAI] 🔄 Trying route: ${route.name}...`);
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 40000); // 40s timeout
+        const timeout = setTimeout(() => controller.abort(), 35000); // 35s timeout
 
         const response = await fetch(route.url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`,
+            Authorization: `Bearer ${route.apiKey}`,
             ...(route.headers || {}),
           },
           body: JSON.stringify({
@@ -132,13 +166,24 @@ export class FrontierThinkingProvider implements AIProvider {
 
         if (!response.ok) {
           const errText = await response.text();
-          console.warn(`[FrontierAI] Route ${route.name} returned ${response.status}: ${errText.slice(0, 150)}`);
-          continue;
+          if (response.status === 429) {
+            console.warn(`[FrontierAI] ⚠️ Route ${route.name} rate-limited (429). Setting 45s cooldown & rotating to next key...`);
+            routeCooldowns.set(route.id, Date.now() + 45000);
+          } else if (response.status === 402 || response.status === 401) {
+            console.warn(`[FrontierAI] ⚠️ Route ${route.name} quota/auth error (${response.status}). Setting 30m cooldown & rotating...`);
+            routeCooldowns.set(route.id, Date.now() + 1800000);
+          } else {
+            console.warn(`[FrontierAI] Route ${route.name} returned ${response.status}: ${errText.slice(0, 120)}. Rotating...`);
+          }
+          continue; // Automatically rotate to next route!
         }
 
         const data = await response.json();
         const rawContent = data.choices?.[0]?.message?.content;
-        if (!rawContent) continue;
+        if (!rawContent) {
+          console.warn(`[FrontierAI] Route ${route.name} returned empty content. Rotating...`);
+          continue;
+        }
 
         let clean = rawContent.trim();
         if (clean.includes('```json')) {
@@ -154,13 +199,17 @@ export class FrontierThinkingProvider implements AIProvider {
         }
 
         const parsed = JSON.parse(clean);
-        console.log(`[FrontierAI] Successfully generated using ${route.name}`);
+        console.log(`[FrontierAI] ✅ Successfully generated using ${route.name}`);
+        // Clear any cooldown on this successful route
+        routeCooldowns.delete(route.id);
         return parsed;
       } catch (err: any) {
-        console.warn(`[FrontierAI] Route ${route.name} failed: ${err.message || err}`);
+        console.warn(`[FrontierAI] Route ${route.name} error (${err.message || err}). Rotating to next route...`);
+        routeCooldowns.set(route.id, Date.now() + 20000);
       }
     }
 
+    console.warn('[FrontierAI] All available LLM routes exhausted. Falling back to domain synthesis.');
     return null;
   }
 
