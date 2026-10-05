@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Next.js
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# Environment Variables
+.env
+.env*.local
+!.env.example
+
+# Datasets & Checkpoints
+checkpoints/
+*.tar.gz
+*.pyc
+__pycache__/
+
+# OS
+.DS_Store
+Thumbs.db
