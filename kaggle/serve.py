@@ -32,16 +32,29 @@ def init_model(model_dir: str = "./checkpoints/roblox-asset-ai-t4", base_model: 
         device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"Target execution device: {device}")
 
-        tokenizer = AutoTokenizer.from_pretrained(model_dir if os.path.exists(os.path.join(model_dir, "tokenizer_config.json")) else base_model)
+        target_dir = model_dir
+        if not os.path.exists(os.path.join(target_dir, "adapter_config.json")):
+            if os.path.exists(model_dir):
+                checkpoints = [
+                    os.path.join(model_dir, d)
+                    for d in os.listdir(model_dir)
+                    if d.startswith("checkpoint-") and os.path.exists(os.path.join(model_dir, d, "adapter_config.json"))
+                ]
+                if checkpoints:
+                    checkpoints.sort(key=lambda p: int(p.split("checkpoint-")[-1]) if p.split("checkpoint-")[-1].isdigit() else 0)
+                    target_dir = checkpoints[-1]
+                    logger.info(f"Auto-detected saved checkpoint: {target_dir}")
 
-        if os.path.exists(os.path.join(model_dir, "adapter_config.json")):
-            logger.info("Found trained LoRA adapter. Loading base model + adapter...")
+        tokenizer = AutoTokenizer.from_pretrained(target_dir if os.path.exists(os.path.join(target_dir, "tokenizer_config.json")) else base_model)
+
+        if os.path.exists(os.path.join(target_dir, "adapter_config.json")):
+            logger.info(f"Found trained LoRA adapter in {target_dir}. Loading base model + adapter...")
             base = AutoModelForCausalLM.from_pretrained(
                 base_model,
                 torch_dtype=torch.float16 if device == "cuda" else torch.float32,
                 device_map="auto" if device == "cuda" else None,
             )
-            model = PeftModel.from_pretrained(base, model_dir)
+            model = PeftModel.from_pretrained(base, target_dir)
         else:
             logger.info("Loading base model directly...")
             model = AutoModelForCausalLM.from_pretrained(
