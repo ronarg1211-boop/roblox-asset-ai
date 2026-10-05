@@ -15,6 +15,18 @@ from typing import Dict, Any, Optional
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("RobloxAssetAI-Server")
 
+# Auto-fix Kaggle pre-installed torchao version incompatibility (< 0.16.0)
+try:
+    import importlib.metadata
+    import subprocess
+    _ao_ver = importlib.metadata.version("torchao")
+    _parts = [int(p) for p in _ao_ver.split(".")[:2] if p.isdigit()]
+    if len(_parts) >= 2 and (_parts[0], _parts[1]) < (0, 16):
+        logger.info(f"Auto-fixing Kaggle environment: removing incompatible torchao {_ao_ver}...")
+        subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "torchao"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+except Exception:
+    pass
+
 # Global pipeline state
 LOADED_MODEL = None
 LOADED_TOKENIZER = None
@@ -97,7 +109,7 @@ def generate_with_model(prompt: str, task: str = "model") -> Dict[str, Any]:
             with torch.no_grad():
                 output_ids = LOADED_MODEL.generate(
                     **inputs,
-                    max_new_tokens=1024,
+                    max_new_tokens=2048,
                     temperature=0.3,
                     do_sample=True,
                     top_p=0.9,
@@ -105,15 +117,19 @@ def generate_with_model(prompt: str, task: str = "model") -> Dict[str, Any]:
                 )
 
             gen_text = LOADED_TOKENIZER.decode(output_ids[0][inputs.input_ids.shape[1]:], skip_special_tokens=True).strip()
-            # Clean markdown fences if any
-            if gen_text.startswith("```json"):
-                gen_text = gen_text[7:]
-            if gen_text.startswith("```"):
-                gen_text = gen_text[3:]
-            if gen_text.endswith("```"):
-                gen_text = gen_text[:-3]
+            # Clean markdown fences or surrounding commentary if any
+            clean = gen_text.strip()
+            if "```json" in clean:
+                clean = clean.split("```json")[1].split("```")[0].strip()
+            elif "```" in clean:
+                clean = clean.split("```")[1].split("```")[0].strip()
+            else:
+                s = clean.find("{")
+                e = clean.rfind("}")
+                if s != -1 and e != -1 and e > s:
+                    clean = clean[s:e+1]
 
-            parsed = json.loads(gen_text.strip())
+            parsed = json.loads(clean)
             return parsed
         except Exception as e:
             logger.error(f"Inference error, falling back: {e}")

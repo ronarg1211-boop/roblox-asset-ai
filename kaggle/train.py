@@ -16,6 +16,18 @@ from typing import Dict, List, Optional, Any
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("RobloxAssetAI-Trainer")
 
+# Auto-fix Kaggle pre-installed torchao version incompatibility (< 0.16.0)
+try:
+    import importlib.metadata
+    import subprocess
+    _ao_ver = importlib.metadata.version("torchao")
+    _parts = [int(p) for p in _ao_ver.split(".")[:2] if p.isdigit()]
+    if len(_parts) >= 2 and (_parts[0], _parts[1]) < (0, 16):
+        logger.info(f"Auto-fixing Kaggle environment: removing incompatible torchao {_ao_ver}...")
+        subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "torchao"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+except Exception:
+    pass
+
 def detect_hardware():
     """Detects available GPU, T4 presence, and CUDA capabilities."""
     logger.info("==================================================")
