@@ -148,6 +148,8 @@ export interface RobloxAnimationIR {
     prompt?: string;
     createdAt?: string;
     iteration?: number;
+    generator?: string;
+    author?: string;
     qualityScore?: number;
   };
 }
@@ -224,7 +226,7 @@ export interface GenerationRequest {
   maxIterations?: number;
   qualityThreshold?: number;
   stylePreset?: 'low-poly' | 'stylized' | 'modular' | 'detailed';
-  provider?: 'mock' | 'gemini' | 'openai' | 'anthropic' | 'kaggle';
+  provider?: 'mock' | 'gemini' | 'openai' | 'anthropic' | 'kaggle' | 'frontier' | string;
 }
 
 export interface GenerationResponse {

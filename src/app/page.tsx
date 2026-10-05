@@ -53,7 +53,7 @@ export default function RobloxAssetAIStudio() {
     maxIterations: number;
     qualityThreshold: number;
     stylePreset: 'low-poly' | 'stylized' | 'modular' | 'detailed';
-    provider: 'mock' | 'gemini' | 'openai' | 'kaggle';
+    provider: 'mock' | 'gemini' | 'openai' | 'kaggle' | 'frontier';
   }) => {
     setIsGenerating(true);
     setActiveProvider(params.provider);
@@ -97,7 +97,7 @@ export default function RobloxAssetAIStudio() {
     }
   };
 
-  const [activeProvider, setActiveProvider] = useState<'mock' | 'gemini' | 'openai' | 'kaggle'>('kaggle');
+  const [activeProvider, setActiveProvider] = useState<'mock' | 'gemini' | 'openai' | 'kaggle' | 'frontier'>('frontier');
 
   // Trigger next single-step improvement
   const handleImproveFurther = () => {

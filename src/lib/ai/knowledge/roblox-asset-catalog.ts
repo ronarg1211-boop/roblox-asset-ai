@@ -2131,6 +2131,7 @@ export class RobloxAssetCatalog {
   // ============================================================
 
   private static buildParametricAsset(prompt: string, iteration: number): AssetGeneratorResult {
+    const instances: RobloxInstanceIR[] = [];
     const cleaned = prompt
       .replace(/^(create|make|build|generate|design|spawn|give me|render)\s+(a|an|the)?\s*/i, '')
       .replace(/^(a|an|the)\s+/i, '')

@@ -29,7 +29,7 @@ interface GenerationControlsProps {
     maxIterations: number;
     qualityThreshold: number;
     stylePreset: 'low-poly' | 'stylized' | 'modular' | 'detailed';
-    provider: 'mock' | 'gemini' | 'openai' | 'kaggle';
+    provider: 'mock' | 'gemini' | 'openai' | 'kaggle' | 'frontier';
   }) => void;
   isGenerating: boolean;
 }
@@ -84,14 +84,14 @@ export default function GenerationControls({
   isGenerating,
 }: GenerationControlsProps) {
   const [prompt, setPrompt] = useState(
-    'Create a stylized low-poly wooden treasure chest with metal bands.'
+    'A zombie in a shredded business suit holding a torn briefcase'
   );
   const [referenceImage, setReferenceImage] = useState<string | undefined>(undefined);
   const [assetType, setAssetType] = useState<AssetType>('model');
   const [stylePreset, setStylePreset] = useState<'low-poly' | 'stylized' | 'modular' | 'detailed'>('stylized');
   const [maxIterations, setMaxIterations] = useState(3);
   const [qualityThreshold, setQualityThreshold] = useState(88);
-  const [provider, setProvider] = useState<'mock' | 'gemini' | 'openai' | 'kaggle'>('kaggle');
+  const [provider, setProvider] = useState<'mock' | 'gemini' | 'openai' | 'kaggle' | 'frontier'>('frontier');
   const [presetCategory, setPresetCategory] = useState<'all' | 'props' | 'architecture' | 'vehicles' | 'animations'>('all');
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -174,16 +174,32 @@ export default function GenerationControls({
             <label className="text-xs font-medium text-studio-400">AI Engine</label>
             <span className="text-[10px] text-emerald-400 font-mono font-medium flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              {provider === 'kaggle' ? 'Kaggle Dedicated AI' : 'Native Offline Engine'}
+              {provider === 'frontier'
+                ? 'Frontier 70B Thinking (Active)'
+                : provider === 'kaggle'
+                ? 'Kaggle Dedicated AI'
+                : 'Native Offline Engine'}
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-1.5 p-1 bg-studio-950 rounded-lg border border-studio-800 text-xs">
+          <div className="grid grid-cols-3 gap-1 p-1 bg-studio-950 rounded-lg border border-studio-800 text-xs">
+            <button
+              type="button"
+              onClick={() => setProvider('frontier')}
+              className={`py-1.5 px-1.5 rounded-md font-medium flex items-center justify-center gap-1 transition ${
+                provider === 'frontier'
+                  ? 'bg-purple-600 text-white shadow shadow-purple-600/30'
+                  : 'text-studio-400 hover:text-studio-200 hover:bg-studio-850'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Frontier 70B</span>
+            </button>
             <button
               type="button"
               onClick={() => setProvider('kaggle')}
-              className={`py-1.5 px-2 rounded-md font-medium flex items-center justify-center gap-1.5 transition ${
+              className={`py-1.5 px-1.5 rounded-md font-medium flex items-center justify-center gap-1 transition ${
                 provider === 'kaggle'
-                  ? 'bg-emerald-600 text-white shadow'
+                  ? 'bg-emerald-600 text-white shadow shadow-emerald-600/30'
                   : 'text-studio-400 hover:text-studio-200 hover:bg-studio-850'
               }`}
             >
@@ -193,14 +209,14 @@ export default function GenerationControls({
             <button
               type="button"
               onClick={() => setProvider('mock')}
-              className={`py-1.5 px-2 rounded-md font-medium flex items-center justify-center gap-1.5 transition ${
+              className={`py-1.5 px-1.5 rounded-md font-medium flex items-center justify-center gap-1 transition ${
                 provider === 'mock'
                   ? 'bg-roblox-blue text-white shadow'
                   : 'text-studio-400 hover:text-studio-200 hover:bg-studio-850'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Native Engine</span>
+              <Box className="w-3.5 h-3.5" />
+              <span>Native</span>
             </button>
           </div>
         </div>
