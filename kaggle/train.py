@@ -156,20 +156,25 @@ def run_real_training(args, device: str, vram_gb: float):
     tokenized_train = [format_and_tokenize(s) for s in train_samples]
     tokenized_val = [format_and_tokenize(s) for s in val_samples] if val_samples else []
 
-    training_args = TrainingArguments(
-        output_dir=args.output_dir,
-        per_device_train_batch_size=args.batch_size,
-        gradient_accumulation_steps=args.grad_accum,
-        num_train_epochs=args.epochs,
-        learning_rate=args.lr,
-        fp16=(device == "cuda"),
-        logging_steps=10,
-        save_strategy="epoch",
-        evaluation_strategy="epoch" if tokenized_val else "no",
-        save_total_limit=2,
-        optim="adamw_torch",
-        report_to="none"
-    )
+    eval_setting = "epoch" if tokenized_val else "no"
+    targs_kwargs = {
+        "output_dir": args.output_dir,
+        "per_device_train_batch_size": args.batch_size,
+        "gradient_accumulation_steps": args.grad_accum,
+        "num_train_epochs": args.epochs,
+        "learning_rate": args.lr,
+        "fp16": (device == "cuda"),
+        "logging_steps": 10,
+        "save_strategy": "epoch",
+        "save_total_limit": 2,
+        "optim": "adamw_torch",
+        "report_to": "none",
+    }
+    # Transformers >= 4.46 renamed evaluation_strategy to eval_strategy
+    try:
+        training_args = TrainingArguments(**targs_kwargs, eval_strategy=eval_setting)
+    except TypeError:
+        training_args = TrainingArguments(**targs_kwargs, evaluation_strategy=eval_setting)
 
     trainer = Trainer(
         model=model,
