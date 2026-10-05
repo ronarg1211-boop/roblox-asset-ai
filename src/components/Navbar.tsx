@@ -45,9 +45,9 @@ export default function Navbar({ onOpenBenchmark, onOpenStudioPlugin, onOpenKagg
 
       {/* Action Buttons & Status */}
       <div className="flex items-center gap-2">
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-studio-900 border border-studio-800 rounded-lg text-[11px] text-studio-300">
+        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-studio-900 border border-studio-800 rounded-lg text-[11px] text-studio-300">
           <CheckCircle className="w-3.5 h-3.5 text-roblox-green" />
-          <span>Self-Correction Engine: Ready</span>
+          <span>Self-Correction Loop: Active</span>
         </div>
 
         <button
@@ -55,15 +55,16 @@ export default function Navbar({ onOpenBenchmark, onOpenStudioPlugin, onOpenKagg
           className="flex items-center gap-1.5 px-3 py-1.5 bg-studio-900 hover:bg-studio-850 text-studio-200 hover:text-white rounded-lg text-xs font-medium border border-studio-800 transition"
         >
           <BarChart3 className="w-3.5 h-3.5 text-roblox-yellow" />
-          <span>RobloxAssetBench</span>
+          <span className="hidden sm:inline">Benchmark</span>
         </button>
 
         <button
           onClick={onOpenKaggle}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-studio-900 hover:bg-studio-850 text-studio-200 hover:text-white rounded-lg text-xs font-medium border border-studio-800 transition"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 hover:text-white rounded-lg text-xs font-medium border border-emerald-500/30 transition shadow-sm"
         >
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <Cpu className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Kaggle Dedicated AI</span>
+          <span>Kaggle AI</span>
         </button>
 
         <button
@@ -71,7 +72,7 @@ export default function Navbar({ onOpenBenchmark, onOpenStudioPlugin, onOpenKagg
           className="flex items-center gap-1.5 px-3 py-1.5 bg-studio-900 hover:bg-studio-850 text-studio-200 hover:text-white rounded-lg text-xs font-medium border border-studio-800 transition"
         >
           <Plug className="w-3.5 h-3.5 text-roblox-blue" />
-          <span>Studio Plugin</span>
+          <span className="hidden sm:inline">Studio Plugin</span>
         </button>
       </div>
     </header>

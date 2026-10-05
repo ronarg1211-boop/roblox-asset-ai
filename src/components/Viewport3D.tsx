@@ -455,6 +455,48 @@ export default function Viewport3D({
     return dataUrl;
   };
 
+  // 1-Click Download Render Screenshot PNG
+  const handleDownloadSnapshot = () => {
+    const dataUrl = handleCaptureSnapshot();
+    if (!dataUrl) return;
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `${modelIR?.name || 'RobloxAsset'}-render.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  // Quick Camera Angles
+  const setCameraAngle = (type: 'iso' | 'front' | 'top') => {
+    if (!cameraRef.current) return;
+    if (type === 'iso') {
+      cameraSpherical.current.theta = Math.PI / 4;
+      cameraSpherical.current.phi = Math.PI / 3;
+    } else if (type === 'front') {
+      cameraSpherical.current.theta = 0;
+      cameraSpherical.current.phi = Math.PI / 2.2;
+    } else if (type === 'top') {
+      cameraSpherical.current.theta = 0;
+      cameraSpherical.current.phi = 0.08;
+    }
+    const { radius, theta, phi } = cameraSpherical.current;
+    const target = cameraTarget.current;
+    cameraRef.current.position.set(
+      target.x + radius * Math.sin(phi) * Math.sin(theta),
+      target.y + radius * Math.cos(phi),
+      target.z + radius * Math.sin(phi) * Math.cos(theta)
+    );
+    cameraRef.current.lookAt(target);
+  };
+
+  // Cycle Lighting Presets
+  const cycleLighting = () => {
+    const presets: ('studio' | 'outdoor' | 'neon')[] = ['studio', 'outdoor', 'neon'];
+    const nextIdx = (presets.indexOf(lightingPreset) + 1) % presets.length;
+    setLightingPreset(presets[nextIdx]);
+  };
+
   // Mouse Interaction handlers (Orbit, Pan, Zoom)
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button === 0) isDraggingRef.current = true;
@@ -551,38 +593,81 @@ export default function Viewport3D({
           )}
         </div>
 
-        <div className="flex items-center gap-1 bg-studio-900/90 backdrop-blur-md p-1 rounded-lg border border-studio-800 pointer-events-auto shadow-lg">
+        <div className="flex items-center gap-1 bg-studio-900/90 backdrop-blur-md p-1 rounded-lg border border-studio-800 pointer-events-auto shadow-lg text-xs">
+          {/* Camera Angles */}
+          <div className="flex items-center bg-studio-950/80 rounded p-0.5 border border-studio-800 text-[10px] font-mono">
+            <button
+              onClick={() => setCameraAngle('iso')}
+              title="Isometric 3D View"
+              className="px-1.5 py-0.5 rounded text-studio-300 hover:text-white hover:bg-studio-850 transition"
+            >
+              Iso
+            </button>
+            <button
+              onClick={() => setCameraAngle('front')}
+              title="Front Ortho View"
+              className="px-1.5 py-0.5 rounded text-studio-300 hover:text-white hover:bg-studio-850 transition"
+            >
+              Front
+            </button>
+            <button
+              onClick={() => setCameraAngle('top')}
+              title="Top Ortho View"
+              className="px-1.5 py-0.5 rounded text-studio-300 hover:text-white hover:bg-studio-850 transition"
+            >
+              Top
+            </button>
+          </div>
+
+          {/* Reset Camera */}
           <button
             onClick={handleResetCamera}
-            title="Reset Camera"
+            title="Reset Camera Position"
             className="p-1.5 text-studio-400 hover:text-studio-100 hover:bg-studio-800 rounded transition"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
+
+          {/* Grid Toggle */}
           <button
             onClick={() => setShowGrid(!showGrid)}
-            title="Toggle Studio Grid"
+            title="Toggle Studio 1-Stud Grid"
             className={`p-1.5 rounded transition ${
               showGrid ? 'text-roblox-blue bg-studio-800' : 'text-studio-400 hover:text-studio-100'
             }`}
           >
-            <Grid className="w-4 h-4" />
+            <Grid className="w-3.5 h-3.5" />
           </button>
+
+          {/* Wireframe */}
           <button
             onClick={() => setWireframe(!wireframe)}
-            title="Toggle Wireframe"
+            title="Toggle Wireframe Mode"
             className={`p-1.5 rounded transition ${
               wireframe ? 'text-roblox-yellow bg-studio-800' : 'text-studio-400 hover:text-studio-100'
             }`}
           >
-            <Eye className="w-4 h-4" />
+            <Eye className="w-3.5 h-3.5" />
           </button>
+
+          {/* Lighting Mode */}
           <button
-            onClick={handleCaptureSnapshot}
-            title="Capture Viewport Screenshot"
-            className="p-1.5 text-studio-400 hover:text-studio-100 hover:bg-studio-800 rounded transition"
+            onClick={cycleLighting}
+            title={`Cycle Lighting Preset (Current: ${lightingPreset})`}
+            className="p-1.5 text-studio-400 hover:text-amber-300 hover:bg-studio-800 rounded transition flex items-center gap-1"
           >
-            <Camera className="w-4 h-4" />
+            <Sun className="w-3.5 h-3.5" />
+            <span className="text-[10px] capitalize font-mono">{lightingPreset}</span>
+          </button>
+
+          {/* 1-Click Render PNG Download */}
+          <button
+            onClick={handleDownloadSnapshot}
+            title="Download HD Viewport Render Screenshot (.png)"
+            className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-studio-800 rounded transition flex items-center gap-1 font-mono text-[10px]"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span>Render</span>
           </button>
         </div>
       </div>

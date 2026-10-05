@@ -56,6 +56,7 @@ export default function RobloxAssetAIStudio() {
     provider: 'mock' | 'gemini' | 'openai' | 'kaggle';
   }) => {
     setIsGenerating(true);
+    setActiveProvider(params.provider);
 
     try {
       const res = await fetch('/api/generate', {
@@ -96,6 +97,8 @@ export default function RobloxAssetAIStudio() {
     }
   };
 
+  const [activeProvider, setActiveProvider] = useState<'mock' | 'gemini' | 'openai' | 'kaggle'>('kaggle');
+
   // Trigger next single-step improvement
   const handleImproveFurther = () => {
     if (iterations.length === 0 || isGenerating) return;
@@ -106,7 +109,7 @@ export default function RobloxAssetAIStudio() {
       maxIterations: 1,
       qualityThreshold: 0.96,
       stylePreset: 'stylized',
-      provider: 'mock',
+      provider: activeProvider,
     });
   };
 

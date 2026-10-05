@@ -15,6 +15,9 @@ import {
   Layers,
   ChevronDown,
   Cpu,
+  Dices,
+  Wand2,
+  Trash2,
 } from 'lucide-react';
 import { AssetType } from '@/lib/types/roblox';
 
@@ -31,20 +34,49 @@ interface GenerationControlsProps {
   isGenerating: boolean;
 }
 
-const INSPIRATION_PRESETS: { label: string; prompt: string; type: AssetType }[] = [
-  { label: '💎 Treasure Chest', prompt: 'Stylized low-poly wooden treasure chest with metal bands and gold latch', type: 'model' },
-  { label: '🗡️ Knight Sword', prompt: 'Knight broadsword with golden crossguard and steel fuller blade', type: 'model' },
-  { label: '🪑 Royal Throne', prompt: 'Medieval throne chair with crimson velvet cushion and armrests', type: 'model' },
-  { label: '🚗 Off-Road Buggy', prompt: 'Rugged off-road buggy with chunky wheels, cabin glass, and bullbar', type: 'model' },
-  { label: '🌲 Pine Tree', prompt: 'Low-poly pine tree with tiered foliage and cobblestone base', type: 'model' },
-  { label: '🏰 Castle Keep', prompt: 'Medieval stone castle keep with corner turrets and portcullis gate', type: 'model' },
-  { label: '🚀 Starfighter', prompt: 'Sci-fi starfighter spaceship with twin plasma ion engines and pulse lasers', type: 'model' },
-  { label: '🗿 Earth Golem', prompt: 'Stone earth golem creature with moss boulder torso and glowing arcane eyes', type: 'model' },
-  { label: '💣 Siege Cannon', prompt: 'Iron siege cannon on wooden wheeled carriage with cannonballs', type: 'model' },
-  { label: '⛲ Marble Fountain', prompt: 'Tiered marble water fountain with spouting jets and pool basin', type: 'model' },
-  { label: '👋 Character Wave', prompt: 'Make this character wave with a friendly arm motion', type: 'animation' },
-  { label: '🚶 Walk Cycle', prompt: 'Smooth humanoid walking cycle animation for Roblox character', type: 'animation' },
-  { label: '⚔️ Sword Slash', prompt: 'Dynamic sword slash attack combo keyframe animation', type: 'animation' },
+interface PresetItem {
+  label: string;
+  category: 'props' | 'architecture' | 'vehicles' | 'animations';
+  prompt: string;
+  type: AssetType;
+}
+
+const INSPIRATION_PRESETS: PresetItem[] = [
+  // Props
+  { label: '💎 Treasure Chest', category: 'props', prompt: 'Stylized low-poly wooden treasure chest with reinforced metal bands and gold latch', type: 'model' },
+  { label: '📦 Shipping Crate', category: 'props', prompt: 'Industrial wooden shipping crate with cross-bracing and metal corner brackets', type: 'model' },
+  { label: '🛢️ Storage Barrel', category: 'props', prompt: 'Oak storage barrel with iron bands and tap spigot', type: 'model' },
+  { label: '🔥 Campsite Fire', category: 'props', prompt: 'Cozy campsite fire with cobblestone ring, star-arranged logs, and glowing embers', type: 'model' },
+  { label: '🔮 Magic Crystal', category: 'props', prompt: 'Floating magical crystal formation with glowing neon shards and stone pedestal', type: 'model' },
+  { label: '👑 Golden Crown', category: 'props', prompt: 'Royal golden crown with arched prongs and colorful neon gemstones', type: 'model' },
+  { label: '⚔️ Anvil', category: 'props', prompt: 'Heavy blacksmith anvil on wooden stump with working horn', type: 'model' },
+  { label: '🧪 Potion Bottle', category: 'props', prompt: 'Glass potion bottle with cork stopper and luminous swirling liquid', type: 'model' },
+
+  // Architecture & Furniture
+  { label: '🪑 Armchair', category: 'architecture', prompt: 'Medieval wooden armchair with crimson velvet seat cushion and carved legs', type: 'model' },
+  { label: '🍷 Banquet Table', category: 'architecture', prompt: 'Rustic wooden banquet tavern table with support stretchers and plates', type: 'model' },
+  { label: '🏰 Watchtower', category: 'architecture', prompt: 'Medieval stone watchtower with crenellations and observation deck', type: 'model' },
+  { label: '🏠 Forest Cottage', category: 'architecture', prompt: 'Cozy stone cottage with peaked slate roof and chimney', type: 'model' },
+  { label: '🌉 Arch Bridge', category: 'architecture', prompt: 'Stone arch bridge with ramp approaches and baluster railings', type: 'model' },
+  { label: '⛲ Marble Fountain', category: 'architecture', prompt: 'Tiered marble water fountain with decorative spouts and water pool', type: 'model' },
+  { label: '🚪 Fortified Door', category: 'architecture', prompt: 'Heavy dungeon fortress door with iron bands and stone archway frame', type: 'model' },
+
+  // Vehicles & Nature
+  { label: '🚗 Off-Road Buggy', category: 'vehicles', prompt: 'Rugged off-road buggy with chunky wheels, roll cage, and front bumper', type: 'model' },
+  { label: '🚚 Heavy Truck', category: 'vehicles', prompt: 'Heavy duty cargo truck with cabin windshield and open cargo bed', type: 'model' },
+  { label: '🌲 Pine Tree', category: 'vehicles', prompt: 'Low-poly stylized pine tree with tiered foliage and cobblestone base', type: 'model' },
+  { label: '🌴 Palm Tree', category: 'vehicles', prompt: 'Tropical palm tree with curved trunk and wide frond canopy', type: 'model' },
+  { label: '🏴‍☠️ Pirate Ship', category: 'vehicles', prompt: 'Wooden pirate galleon ship with tall mast, bowsprit, and cannon ports', type: 'model' },
+  { label: '🚁 Helicopter', category: 'vehicles', prompt: 'Tactical helicopter with rotor blades, cockpit canopy, and landing skids', type: 'model' },
+  { label: '🏍️ Motorcycle', category: 'vehicles', prompt: 'Chopper style motorcycle with chrome handlebars and engine block', type: 'model' },
+  { label: '🗿 Earth Golem', category: 'vehicles', prompt: 'Stone earth golem creature with moss boulder torso and glowing neon eyes', type: 'model' },
+
+  // Animations
+  { label: '👋 Friendly Wave', category: 'animations', prompt: 'Make this character wave with a friendly right arm motion', type: 'animation' },
+  { label: '🚶 Walk Cycle', category: 'animations', prompt: 'Smooth natural humanoid walk cycle keyframe animation for R15 avatar', type: 'animation' },
+  { label: '⚔️ Sword Slash', category: 'animations', prompt: 'Dynamic combat sword slash attack combo keyframe animation', type: 'animation' },
+  { label: '🏃 Sprint Run', category: 'animations', prompt: 'Fast-paced athletic sprint run animation with arm swinging', type: 'animation' },
+  { label: '🧘 Idle Breathing', category: 'animations', prompt: 'Relaxed idle breathing animation with gentle torso and head sway', type: 'animation' },
 ];
 
 export default function GenerationControls({
@@ -59,10 +91,34 @@ export default function GenerationControls({
   const [stylePreset, setStylePreset] = useState<'low-poly' | 'stylized' | 'modular' | 'detailed'>('stylized');
   const [maxIterations, setMaxIterations] = useState(3);
   const [qualityThreshold, setQualityThreshold] = useState(88);
-  const [provider, setProvider] = useState<'mock' | 'gemini' | 'openai' | 'kaggle'>('mock');
+  const [provider, setProvider] = useState<'mock' | 'gemini' | 'openai' | 'kaggle'>('kaggle');
+  const [presetCategory, setPresetCategory] = useState<'all' | 'props' | 'architecture' | 'vehicles' | 'animations'>('all');
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleRandomPreset = () => {
+    const pool = presetCategory === 'all'
+      ? INSPIRATION_PRESETS
+      : INSPIRATION_PRESETS.filter((p) => p.category === presetCategory);
+    const chosen = pool[Math.floor(Math.random() * pool.length)];
+    if (chosen) {
+      setPrompt(chosen.prompt);
+      setAssetType(chosen.type);
+    }
+  };
+
+  const handleEnhancePrompt = () => {
+    if (!prompt.trim()) return;
+    const additions = ', stylized low-poly aesthetic, clean Roblox Part bevels, grid-aligned proportions, vivid material contrasts';
+    if (!prompt.includes('stylized') && !prompt.includes('Roblox')) {
+      setPrompt(prompt.trim() + additions);
+    }
+  };
+
+  const filteredPresets = presetCategory === 'all'
+    ? INSPIRATION_PRESETS
+    : INSPIRATION_PRESETS.filter((p) => p.category === presetCategory);
 
   const handleImageFile = (file: File) => {
     if (!file.type.startsWith('image/')) return;
@@ -105,12 +161,50 @@ export default function GenerationControls({
             Asset Generator
           </h2>
         </div>
-        <span className="text-[11px] font-mono text-studio-400 bg-studio-850 px-2 py-0.5 rounded border border-studio-800">
+        <span className="text-[11px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
           Studio v0.3
         </span>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Prominent Engine Switcher */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-studio-400">AI Engine</label>
+            <span className="text-[10px] text-emerald-400 font-mono font-medium flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              {provider === 'kaggle' ? 'Kaggle Dedicated AI' : 'Native Offline Engine'}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-studio-950 rounded-lg border border-studio-800 text-xs">
+            <button
+              type="button"
+              onClick={() => setProvider('kaggle')}
+              className={`py-1.5 px-2 rounded-md font-medium flex items-center justify-center gap-1.5 transition ${
+                provider === 'kaggle'
+                  ? 'bg-emerald-600 text-white shadow'
+                  : 'text-studio-400 hover:text-studio-200 hover:bg-studio-850'
+              }`}
+            >
+              <Cpu className="w-3.5 h-3.5" />
+              <span>Kaggle 1.5B</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setProvider('mock')}
+              className={`py-1.5 px-2 rounded-md font-medium flex items-center justify-center gap-1.5 transition ${
+                provider === 'mock'
+                  ? 'bg-roblox-blue text-white shadow'
+                  : 'text-studio-400 hover:text-studio-200 hover:bg-studio-850'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Native Engine</span>
+            </button>
+          </div>
+        </div>
+
         {/* Asset Type Selector */}
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-studio-400">Asset Mode</label>
@@ -160,9 +254,28 @@ export default function GenerationControls({
             <label className="text-xs font-medium text-studio-400">
               Description / Intended Asset
             </label>
-            <span className="text-[10px] text-studio-500 font-mono">
-              {prompt.length}/2000
-            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleEnhancePrompt}
+                className="text-[10px] text-roblox-blue hover:text-blue-300 font-mono flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-roblox-blue/10 border border-roblox-blue/30 transition"
+                title="Enhance prompt with Roblox Studio styling cues"
+              >
+                <Wand2 className="w-3 h-3" />
+                <span>Enhance</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPrompt('')}
+                className="text-[10px] text-studio-500 hover:text-studio-300 p-0.5 rounded transition"
+                title="Clear prompt"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+              <span className="text-[10px] text-studio-500 font-mono ml-1">
+                {prompt.length}/2000
+              </span>
+            </div>
           </div>
           <textarea
             value={prompt}
@@ -172,11 +285,44 @@ export default function GenerationControls({
             className="w-full bg-studio-950 border border-studio-750 focus:border-roblox-blue rounded-lg p-3 text-xs text-studio-100 placeholder:text-studio-600 focus:outline-none focus:ring-1 focus:ring-roblox-blue transition resize-none leading-relaxed"
           />
 
-          {/* Quick Inspiration Presets */}
-          <div className="space-y-1 pt-1">
-            <span className="text-[10px] text-studio-500 font-mono uppercase tracking-wider block">Quick Presets:</span>
+          {/* Categorized Inspiration Presets & Randomizer */}
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-studio-400 font-mono uppercase tracking-wider">
+                Inspiration Presets:
+              </span>
+              <button
+                type="button"
+                onClick={handleRandomPreset}
+                className="text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-1 font-mono transition"
+                title="Pick a random surprise preset"
+              >
+                <Dices className="w-3 h-3" />
+                <span>Surprise Me</span>
+              </button>
+            </div>
+
+            {/* Category tabs */}
+            <div className="flex gap-1 overflow-x-auto pb-1 text-[10px] no-scrollbar">
+              {(['all', 'props', 'architecture', 'vehicles', 'animations'] as const).map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setPresetCategory(cat)}
+                  className={`px-2 py-0.5 rounded-full capitalize shrink-0 transition ${
+                    presetCategory === cat
+                      ? 'bg-roblox-blue text-white font-medium shadow-sm'
+                      : 'bg-studio-950 text-studio-400 hover:text-studio-200 hover:bg-studio-850'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Preset pills list */}
             <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
-              {INSPIRATION_PRESETS.map((preset, i) => (
+              {filteredPresets.map((preset, i) => (
                 <button
                   key={i}
                   type="button"

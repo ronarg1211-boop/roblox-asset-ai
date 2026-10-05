@@ -22,6 +22,8 @@ import {
   Code2,
   Box,
   Sparkles,
+  Search,
+  FileText,
 } from 'lucide-react';
 import {
   IterationRecord,
@@ -160,6 +162,7 @@ export default function InspectorPanel({
   const [copiedLua, setCopiedLua] = useState(false);
   const [showLuaPreview, setShowLuaPreview] = useState(false);
   const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
+  const [partFilter, setPartFilter] = useState('');
   const [downloadingFormat, setDownloadingFormat] = useState<string | null>(null);
 
   const activeRecord = iterations[activeIterationIndex] || iterations[iterations.length - 1];
@@ -188,6 +191,30 @@ export default function InspectorPanel({
     navigator.clipboard.writeText(script);
     setCopiedLua(true);
     setTimeout(() => setCopiedLua(false), 2200);
+  };
+
+  // Handle Download Lua Script as a .lua File
+  const handleDownloadLuaScript = () => {
+    let script = '';
+    let name = 'RobloxAsset';
+    if (currentModel) {
+      script = generateRobloxLuaScript(currentModel);
+      name = currentModel.name;
+    } else if (currentAnimation) {
+      script = generateRobloxAnimationLuaScript(currentAnimation);
+      name = currentAnimation.name;
+    }
+    if (!script) return;
+
+    const blob = new Blob([script], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name}.lua`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   };
 
   // Handle Asset Download (.rbxmx / .rbxm / json)
@@ -487,8 +514,38 @@ export default function InspectorPanel({
                   )}
                 </div>
 
+                {/* Quick Search & Filter */}
+                <div className="relative pt-1 pb-0.5">
+                  <Search className="w-3 h-3 text-studio-500 absolute left-2 top-2.5" />
+                  <input
+                    type="text"
+                    value={partFilter}
+                    onChange={(e) => setPartFilter(e.target.value)}
+                    placeholder="Filter parts by name or material..."
+                    className="w-full bg-studio-900 border border-studio-800 rounded-lg pl-7 pr-2.5 py-1 text-[11px] text-studio-200 placeholder:text-studio-500 focus:outline-none focus:border-roblox-blue transition"
+                  />
+                  {partFilter && (
+                    <button
+                      onClick={() => setPartFilter('')}
+                      className="absolute right-2 top-2 text-[10px] text-studio-500 hover:text-studio-300"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+
                 <div className="pl-3 space-y-1 border-l border-studio-800 ml-2 max-h-60 overflow-y-auto">
-                  {currentModel?.instances.map((inst, idx) => {
+                  {currentModel?.instances
+                    .filter((inst) => {
+                      if (!partFilter.trim()) return true;
+                      const q = partFilter.toLowerCase();
+                      const part = inst as RobloxPartIR;
+                      return (
+                        part.name?.toLowerCase().includes(q) ||
+                        part.material?.toLowerCase().includes(q)
+                      );
+                    })
+                    .map((inst, idx) => {
                     const part = inst as RobloxPartIR;
                     const isSelected = selectedPartId === part.id;
                     const isPrimary = currentModel.primaryPartId === part.id;
@@ -672,6 +729,14 @@ export default function InspectorPanel({
                         <span>Copy Studio Lua Script</span>
                       </>
                     )}
+                  </button>
+                  <button
+                    onClick={handleDownloadLuaScript}
+                    className="py-2 px-2.5 bg-studio-900 hover:bg-studio-850 text-studio-300 hover:text-white rounded-lg text-xs font-medium border border-studio-750 transition flex items-center gap-1"
+                    title="Download standalone .lua script file"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>.lua</span>
                   </button>
                   <button
                     onClick={() => setShowLuaPreview(!showLuaPreview)}
