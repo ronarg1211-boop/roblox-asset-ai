@@ -81,7 +81,7 @@ export class FrontierThinkingProvider implements AIProvider {
       return fileRoutes;
     }
 
-    // 2. Fallback: Dynamically assemble from environment variables
+    // 2. Fallback: Dynamically assemble from environment variables across all providers
     const routes: LLMRoute[] = [];
 
     const groqKeys = Array.from(new Set([
@@ -96,6 +96,31 @@ export class FrontierThinkingProvider implements AIProvider {
         name: `Groq Key #${i + 1} [Qwen-3.8-27B]`,
         url: 'https://api.groq.com/openai/v1/chat/completions',
         model: 'qwen/qwen3.8-27b',
+        apiKey: k,
+        headers: { 'User-Agent': 'RobloxAssetAI/1.0' },
+      });
+      routes.push({
+        id: `groq_k${i + 1}_gpt120b`,
+        name: `Groq Key #${i + 1} [GPT-OSS-120B]`,
+        url: 'https://api.groq.com/openai/v1/chat/completions',
+        model: 'openai/gpt-oss-120b',
+        apiKey: k,
+        headers: { 'User-Agent': 'RobloxAssetAI/1.0' },
+      });
+    }
+
+    const mistralKeys = Array.from(new Set([
+      ...this.getAllKeys('MISTRAL_API_KEYS'),
+      ...(process.env.MISTRAL_API_KEY ? [process.env.MISTRAL_API_KEY.trim()] : [])
+    ]));
+
+    for (let i = 0; i < mistralKeys.length; i++) {
+      const k = mistralKeys[i];
+      routes.push({
+        id: `mistral_k${i + 1}_codestral`,
+        name: `Mistral Key #${i + 1} [Codestral-Latest]`,
+        url: 'https://api.mistral.ai/v1/chat/completions',
+        model: 'codestral-latest',
         apiKey: k,
         headers: { 'User-Agent': 'RobloxAssetAI/1.0' },
       });
@@ -120,17 +145,17 @@ export class FrontierThinkingProvider implements AIProvider {
           'X-Title': 'Roblox Asset AI',
         },
       });
-    }
-
-    for (let i = 0; i < groqKeys.length; i++) {
-      const k = groqKeys[i];
       routes.push({
-        id: `groq_k${i + 1}_gpt120b`,
-        name: `Groq Key #${i + 1} [GPT-OSS-120B]`,
-        url: 'https://api.groq.com/openai/v1/chat/completions',
-        model: 'openai/gpt-oss-120b',
+        id: `openrouter_k${i + 1}_deepseek`,
+        name: `OpenRouter Key #${i + 1} [DeepSeek-Chat]`,
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        model: 'deepseek/deepseek-chat',
         apiKey: k,
-        headers: { 'User-Agent': 'RobloxAssetAI/1.0' },
+        headers: {
+          'User-Agent': 'RobloxAssetAI/1.0',
+          'HTTP-Referer': 'https://roblox-asset-ai.local',
+          'X-Title': 'Roblox Asset AI',
+        },
       });
     }
 
@@ -257,23 +282,8 @@ export class FrontierThinkingProvider implements AIProvider {
     referenceImage?: string,
     assetType: AssetType = 'model'
   ): Promise<AssetPlan> {
-    const systemPrompt = `You are an expert Roblox 3D Architect.
-Analyze the user's prompt and formulate an architectural plan for a 3D Roblox Studio asset.
-Output valid JSON only with keys:
-- name: string (concise PascalCase model name matching the prompt)
-- assetType: "${assetType}"
-- conceptSummary: string (visual description of what will be built)
-- suggestedParts: array of { name: string, role: string, shape: "Block"|"Ball"|"Cylinder"|"Wedge", material: string, colorHint: string, relativePosition: string }
-- colorPalette: array of { role: string, rgb: [number, number, number] }
-- boundingSize: [number, number, number] (overall dimensions in studs)`;
-
-    const userPrompt = `Asset Request: "${prompt}"\nAsset Type: ${assetType}`;
-
-    const plan = await this.executeLLMCascade(systemPrompt, userPrompt, 0.2, 1000);
-    if (plan && plan.name && Array.isArray(plan.suggestedParts)) {
-      return plan as AssetPlan;
-    }
-
+    // Fast, local domain planning without an extra LLM network roundtrip.
+    // Preserves API token quota and rate limits exclusively for genuine 3D model geometry synthesis.
     return this.fallback.planAsset(prompt, referenceImage, assetType);
   }
 
@@ -428,61 +438,9 @@ Return valid JSON only.`;
   }
 
   public async inspectAndCritique(request: VisionInspectionRequest): Promise<IterationCritique> {
-    const { prompt, currentModelIR, iterationIndex } = request;
-
-    const systemPrompt = `You are Roblox Asset AI's Senior Vision Critic and Spatial Quality Evaluator.
-Evaluate the current Roblox 3D Model candidate against the user's prompt.
-Strictly check:
-1. Prompt fidelity: Did the model include ALL items, accessories, clothing, and features requested in the prompt?
-2. Structural integrity: Are parts grounded at Y=0? Are trims and layers properly offset without coplanar z-fighting?
-3. Proportions & balance: Are shapes and scales natural and aesthetically stylized?
-4. Material & color harmony: Are contrasting materials (Fabric, Metal, Neon, Wood) utilized effectively?
-
-OUTPUT JSON SCHEMA:
-{
-  "summary": "Specific, constructive 1-2 sentence evaluation",
-  "qualityScore": 0.92,
-  "metrics": {
-    "proportions": 0.93,
-    "geometry": 0.91,
-    "materialsAndColors": 0.94,
-    "structuralIntegrity": 0.92,
-    "promptAdherence": 0.95
-  },
-  "items": [
-    {
-      "category": "detail",
-      "severity": "minor",
-      "description": "Specific flaw or detail improvement",
-      "suggestedAction": "ADD_PART",
-      "targetPartId": "optional_part_id"
-    }
-  ]
-}
-Return JSON only.`;
-
-    const userPrompt = `Prompt: "${prompt}"\nIteration: ${iterationIndex}\nCurrent Model Parts: ${JSON.stringify(
-      currentModelIR.instances.map((i: any) => ({ name: i.name, shape: i.shape, size: i.size, pos: i.position, mat: i.material }))
-    )}`;
-
-    const critique = await this.executeLLMCascade(systemPrompt, userPrompt, 0.2, 1200);
-
-    if (critique && typeof critique.qualityScore === 'number' && critique.metrics) {
-      return {
-        summary: critique.summary || 'Vision evaluation completed.',
-        qualityScore: Math.min(0.98, Math.max(0.65, critique.qualityScore)),
-        metrics: {
-          proportions: Number(critique.metrics.proportions) || 0.88,
-          geometry: Number(critique.metrics.geometry) || 0.88,
-          colorMaterial: Number(critique.metrics.colorMaterial || critique.metrics.materialsAndColors) || 0.9,
-          structure: Number(critique.metrics.structure || critique.metrics.structuralIntegrity) || 0.9,
-          promptAdherence: Number(critique.metrics.promptAdherence) || 0.92,
-          overall: Math.min(0.98, Math.max(0.65, Number(critique.qualityScore) || 0.89)),
-        },
-        items: Array.isArray(critique.items) ? critique.items : [],
-      };
-    }
-
+    // Fast, deterministic local structural & aesthetic evaluation
+    // (bounding boxes, grounding, symmetry, and material harmony)
+    // Avoids burning remote LLM tokens or triggering 429 rate limits during quality inspection.
     return this.fallback.inspectAndCritique(request);
   }
 

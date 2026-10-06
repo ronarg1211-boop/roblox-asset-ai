@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Roblox Asset AI - API Key Probe & Top 5 Model Selector
-Probes all configured API keys, tests response status & latency,
-and selects the top 5 best models for sequential rate-limit failover.
+Roblox Asset AI - Multi-Provider API Key Probe & Best-to-Worst Model Ranker
+Probes all configured API keys across all providers (Groq, OpenRouter, Mistral,
+Cerebras, SambaNova, etc.), selects the top models per provider, and ranks the
+combined master ladder from BEST to WORST for sequential rate-limit rollover.
 """
 
 import os
@@ -40,7 +41,7 @@ def get_all_keys(env: Dict[str, str], *var_names: str) -> List[str]:
 def build_candidates(env: Dict[str, str]) -> List[Dict[str, Any]]:
     candidates = []
 
-    # 1. Groq Keys
+    # 1. Groq Keys & Models
     groq_keys = get_all_keys(env, "GROQ_API_KEYS", "GROQ_API_KEY")
     for i, k in enumerate(groq_keys):
         candidates.append({
@@ -60,7 +61,7 @@ def build_candidates(env: Dict[str, str]) -> List[Dict[str, Any]]:
             "url": "https://api.groq.com/openai/v1/chat/completions",
             "model": "openai/gpt-oss-120b",
             "apiKey": k,
-            "weight": 95,
+            "weight": 96,
             "headers": {"User-Agent": "RobloxAssetAI/1.0"}
         })
         candidates.append({
@@ -74,9 +75,24 @@ def build_candidates(env: Dict[str, str]) -> List[Dict[str, Any]]:
             "headers": {"User-Agent": "RobloxAssetAI/1.0"}
         })
 
-    # 2. OpenRouter Keys
+    # 2. OpenRouter Keys & Models
     openrouter_keys = get_all_keys(env, "OPENROUTER_API_KEYS", "OPENROUTER_API_KEY")
     for i, k in enumerate(openrouter_keys):
+        or_headers = {
+            "User-Agent": "RobloxAssetAI/1.0",
+            "HTTP-Referer": "https://roblox-asset-ai.local",
+            "X-Title": "Roblox Asset AI"
+        }
+        candidates.append({
+            "id": f"openrouter_k{i+1}_deepseek",
+            "name": f"OpenRouter Key #{i+1} [DeepSeek-Chat]",
+            "provider": "OpenRouter",
+            "url": "https://openrouter.ai/api/v1/chat/completions",
+            "model": "deepseek/deepseek-chat",
+            "apiKey": k,
+            "weight": 97,
+            "headers": or_headers
+        })
         candidates.append({
             "id": f"openrouter_k{i+1}_llama70b",
             "name": f"OpenRouter Key #{i+1} [Llama-3.3-70B]",
@@ -85,11 +101,7 @@ def build_candidates(env: Dict[str, str]) -> List[Dict[str, Any]]:
             "model": "meta-llama/llama-3.3-70b-instruct",
             "apiKey": k,
             "weight": 96,
-            "headers": {
-                "User-Agent": "RobloxAssetAI/1.0",
-                "HTTP-Referer": "https://roblox-asset-ai.local",
-                "X-Title": "Roblox Asset AI"
-            }
+            "headers": or_headers
         })
         candidates.append({
             "id": f"openrouter_k{i+1}_qwen32b",
@@ -99,14 +111,44 @@ def build_candidates(env: Dict[str, str]) -> List[Dict[str, Any]]:
             "model": "qwen/qwen-2.5-coder-32b-instruct",
             "apiKey": k,
             "weight": 94,
-            "headers": {
-                "User-Agent": "RobloxAssetAI/1.0",
-                "HTTP-Referer": "https://roblox-asset-ai.local",
-                "X-Title": "Roblox Asset AI"
-            }
+            "headers": or_headers
+        })
+        candidates.append({
+            "id": f"openrouter_k{i+1}_mistral24b",
+            "name": f"OpenRouter Key #{i+1} [Mistral-Small-24B]",
+            "provider": "OpenRouter",
+            "url": "https://openrouter.ai/api/v1/chat/completions",
+            "model": "mistralai/mistral-small-24b-instruct-2501",
+            "apiKey": k,
+            "weight": 91,
+            "headers": or_headers
         })
 
-    # 3. Cerebras Keys
+    # 3. Mistral Keys & Models
+    mistral_keys = get_all_keys(env, "MISTRAL_API_KEYS", "MISTRAL_API_KEY")
+    for i, k in enumerate(mistral_keys):
+        candidates.append({
+            "id": f"mistral_k{i+1}_codestral",
+            "name": f"Mistral Key #{i+1} [Codestral-Latest]",
+            "provider": "Mistral",
+            "url": "https://api.mistral.ai/v1/chat/completions",
+            "model": "codestral-latest",
+            "apiKey": k,
+            "weight": 95,
+            "headers": {"User-Agent": "RobloxAssetAI/1.0"}
+        })
+        candidates.append({
+            "id": f"mistral_k{i+1}_nemo",
+            "name": f"Mistral Key #{i+1} [Open-Mistral-Nemo]",
+            "provider": "Mistral",
+            "url": "https://api.mistral.ai/v1/chat/completions",
+            "model": "open-mistral-nemo",
+            "apiKey": k,
+            "weight": 85,
+            "headers": {"User-Agent": "RobloxAssetAI/1.0"}
+        })
+
+    # 4. Cerebras Keys & Models
     cerebras_keys = get_all_keys(env, "CEREBRAS_API_KEYS", "CEREBRAS_API_KEY")
     for i, k in enumerate(cerebras_keys):
         candidates.append({
@@ -120,21 +162,7 @@ def build_candidates(env: Dict[str, str]) -> List[Dict[str, Any]]:
             "headers": {"User-Agent": "RobloxAssetAI/1.0"}
         })
 
-    # 4. Mistral Keys
-    mistral_keys = get_all_keys(env, "MISTRAL_API_KEYS", "MISTRAL_API_KEY")
-    for i, k in enumerate(mistral_keys):
-        candidates.append({
-            "id": f"mistral_k{i+1}_large",
-            "name": f"Mistral Key #{i+1} [Mistral-Large]",
-            "provider": "Mistral",
-            "url": "https://api.mistral.ai/v1/chat/completions",
-            "model": "mistral-large-latest",
-            "apiKey": k,
-            "weight": 93,
-            "headers": {"User-Agent": "RobloxAssetAI/1.0"}
-        })
-
-    # 5. SambaNova Keys
+    # 5. SambaNova Keys & Models
     sambanova_keys = get_all_keys(env, "SAMBANOVA_API_KEYS", "SAMBANOVA_API_KEY")
     for i, k in enumerate(sambanova_keys):
         candidates.append({
@@ -144,7 +172,7 @@ def build_candidates(env: Dict[str, str]) -> List[Dict[str, Any]]:
             "url": "https://api.sambanova.ai/v1/chat/completions",
             "model": "Meta-Llama-3.3-70B-Instruct",
             "apiKey": k,
-            "weight": 92,
+            "weight": 93,
             "headers": {"User-Agent": "RobloxAssetAI/1.0"}
         })
 
@@ -168,12 +196,13 @@ def probe_candidate(candidate: Dict[str, Any]) -> Dict[str, Any]:
     try:
         with urllib.request.urlopen(req, timeout=6) as res:
             latency_ms = round((time.time() - t0) * 1000)
+            score = round(candidate["weight"] * 10 - min(latency_ms * 0.05, 50), 1)
             return {
                 **candidate,
                 "status": "ready",
                 "statusCode": res.status,
                 "latencyMs": latency_ms,
-                "score": candidate["weight"] * 10 - min(latency_ms * 0.05, 50)
+                "score": score
             }
     except urllib.error.HTTPError as e:
         latency_ms = round((time.time() - t0) * 1000)
@@ -194,8 +223,11 @@ def probe_candidate(candidate: Dict[str, Any]) -> Dict[str, Any]:
             "score": -200
         }
 
-def select_top_routes(project_dir: str = PROJECT_DIR, top_n: int = 5) -> List[Dict[str, Any]]:
-    """Probes all configured keys, filters working ones, and selects the Top 5."""
+def select_top_routes(project_dir: str = PROJECT_DIR, top_per_provider: int = 5) -> List[Dict[str, Any]]:
+    """
+    Probes all candidate models for every provider, selects the top models per provider,
+    combines all providers, and ranks the entire ladder from BEST to WORST.
+    """
     env_local_path = os.path.join(project_dir, ".env.local")
     env_path = os.path.join(project_dir, ".env")
 
@@ -207,46 +239,64 @@ def select_top_routes(project_dir: str = PROJECT_DIR, top_n: int = 5) -> List[Di
     if not candidates:
         return []
 
-    # Probe concurrently
-    with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor:
+    # Probe concurrently across all candidates
+    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
         results = list(executor.map(probe_candidate, candidates))
 
-    # Filter only ready routes
-    valid_routes = [r for r in results if r["status"] == "ready"]
+    # Filter ready routes
+    ready_routes = [r for r in results if r["status"] == "ready"]
+    if not ready_routes:
+        return []
 
-    # Sort by score descending (high model capability + low latency)
-    valid_routes.sort(key=lambda x: x["score"], reverse=True)
+    # Group by provider and select the top models per provider
+    provider_map: Dict[str, List[Dict[str, Any]]] = {}
+    for r in ready_routes:
+        prov = r["provider"]
+        if prov not in provider_map:
+            provider_map[prov] = []
+        provider_map[prov].append(r)
 
-    top_routes = valid_routes[:top_n]
+    combined_ladder: List[Dict[str, Any]] = []
+    for prov, routes in provider_map.items():
+        # Sort each provider's routes by score descending
+        routes.sort(key=lambda x: x["score"], reverse=True)
+        # Take up to top_per_provider models for this provider
+        combined_ladder.extend(routes[:top_per_provider])
 
-    # Save to active_routes.json in project root
+    # Now rank the ENTIRE combined ladder from BEST to WORST
+    # Highest benchmark score (capability & speed) at #1, down to the slowest/lowest at the end
+    combined_ladder.sort(key=lambda x: x["score"], reverse=True)
+
+    # Save complete ranked ladder to active_routes.json in project root
     out_file = os.path.join(project_dir, "active_routes.json")
     try:
         with open(out_file, "w", encoding="utf-8") as f:
-            json.dump(top_routes, f, indent=2)
+            json.dump(combined_ladder, f, indent=2)
     except Exception as e:
         print(f"[!] Warning: Could not write active_routes.json: {e}")
 
-    return top_routes
+    return combined_ladder
 
 def display_and_select_routes(project_dir: str = PROJECT_DIR) -> List[Dict[str, Any]]:
-    print("\n[*] Probing AI Keys & Selecting Top 5 Best Models...")
-    top_routes = select_top_routes(project_dir=project_dir, top_n=5)
+    print("\n[*] Probing AI Keys & Benchmarking Best Models for Every Provider...")
+    ranked_ladder = select_top_routes(project_dir=project_dir, top_per_provider=5)
 
-    if not top_routes:
+    if not ranked_ladder:
         print("[!] No active LLM routes responded with 200 OK. Falling back to local domain synthesis.")
         return []
 
-    print("-" * 75)
-    for i, r in enumerate(top_routes):
-        num = f"#{i + 1}"
-        name = r["name"]
-        latency = f"{r['latencyMs']}ms"
-        print(f"  [{num}] {name:38} | Latency: {latency:>5} | Status: READY")
-    print("-" * 75)
-    print(f"[+] Top {len(top_routes)} routes locked in! Sequential rollover active on rate limits (429).\n")
+    print("=" * 82)
+    print(f" MASTER MULTI-PROVIDER AI LADDER (Ranked BEST to WORST across all providers)")
+    print("=" * 82)
+    for i, r in enumerate(ranked_ladder):
+        rank = f"#{i + 1}"
+        tag = "(Primary / Best)" if i == 0 else ("(Worst / Fallback)" if i == len(ranked_ladder) - 1 else "")
+        print(f"  [{rank:>3}] {r['name']:38} | {r['latencyMs']:>4}ms | Score: {r['score']:>5.1f} {tag}")
+    print("=" * 82)
+    print(f"[+] All {len(ranked_ladder)} models verified across all providers!")
+    print(f"[+] Starts with #1 (Best). If rate-limited (429), automatically cascades down the ladder.\n")
 
-    return top_routes
+    return ranked_ladder
 
 if __name__ == "__main__":
     display_and_select_routes()

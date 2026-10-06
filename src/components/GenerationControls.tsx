@@ -89,7 +89,7 @@ export default function GenerationControls({
   const [referenceImage, setReferenceImage] = useState<string | undefined>(undefined);
   const [assetType, setAssetType] = useState<AssetType>('model');
   const [stylePreset, setStylePreset] = useState<'low-poly' | 'stylized' | 'modular' | 'detailed'>('stylized');
-  const [maxIterations, setMaxIterations] = useState(3);
+  const [maxIterations, setMaxIterations] = useState(1);
   const [qualityThreshold, setQualityThreshold] = useState(88);
   const [provider, setProvider] = useState<'mock' | 'gemini' | 'openai' | 'kaggle' | 'frontier'>('frontier');
   const [presetCategory, setPresetCategory] = useState<'all' | 'props' | 'architecture' | 'vehicles' | 'animations'>('all');
@@ -446,8 +446,10 @@ export default function GenerationControls({
               {/* Max Iterations Slider */}
               <div className="space-y-1">
                 <div className="flex justify-between text-studio-400 text-[11px]">
-                  <span>Max Self-Critique Loops</span>
-                  <span className="font-mono text-studio-200 font-semibold">{maxIterations} iterations</span>
+                  <span>Generation Passes</span>
+                  <span className="font-mono text-studio-200 font-semibold">
+                    {maxIterations === 1 ? '1 Pass (Single Model, Token-Efficient)' : `${maxIterations} Loops (Self-Critique)`}
+                  </span>
                 </div>
                 <input
                   type="range"
@@ -486,6 +488,7 @@ export default function GenerationControls({
                   onChange={(e) => setProvider(e.target.value as any)}
                   className="w-full bg-studio-900 border border-studio-750 rounded p-1.5 text-xs text-studio-200 focus:outline-none focus:border-roblox-blue"
                 >
+                  <option value="frontier">Frontier Thinking Engine (Multi-Provider AI Ladder: Groq, Mistral, OpenRouter)</option>
                   <option value="mock">Procedural AI Engine (Offline Domain-Trained)</option>
                   <option value="kaggle">Kaggle Dedicated LLM (Custom Fine-Tuned 1.5B)</option>
                   <option value="gemini">Google Gemini 2.0 Flash (Multimodal)</option>

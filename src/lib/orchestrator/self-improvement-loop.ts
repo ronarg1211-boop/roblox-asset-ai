@@ -32,7 +32,7 @@ export class SelfImprovementOrchestrator {
    */
   public async executePipeline(request: GenerationRequest): Promise<GenerationResponse> {
     const startTime = Date.now();
-    const maxIterations = Math.min(5, Math.max(1, request.maxIterations || 3));
+    const maxIterations = Math.min(5, Math.max(1, request.maxIterations || 1));
     const targetThreshold = request.qualityThreshold || 0.88;
     const provider = getAIProvider(request.provider);
 

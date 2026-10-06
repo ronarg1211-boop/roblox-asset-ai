@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       prompt: body.prompt.trim(),
       referenceImage: body.referenceImage,
       assetType: body.assetType || 'model',
-      maxIterations: body.maxIterations || 3,
+      maxIterations: body.maxIterations || 1,
       qualityThreshold: body.qualityThreshold || 0.88,
       stylePreset: body.stylePreset || 'stylized',
       provider: body.provider,
