@@ -17,6 +17,7 @@ import {
 } from '../types/roblox';
 import { ProceduralProvider } from './procedural-provider';
 import { autoRigModel } from '../roblox/auto-rigger';
+import { ReferenceRetriever } from './knowledge/reference-retriever';
 
 interface LLMRoute {
   id: string;
@@ -294,79 +295,75 @@ export class FrontierThinkingProvider implements AIProvider {
     referenceImage?: string,
     iteration = 1
   ): Promise<RobloxModelIR> {
-    const systemPrompt = `You are Roblox Asset AI, the premier neural 3D modeling engine for Roblox Studio.
-You do NOT use generic approximations or pre-baked templates. You deeply analyze the user's prompt and construct a rich, highly intricate 3D model composed of genuine Roblox primitive parts.
+    const systemPrompt = `You are Roblox Asset AI, the world's most advanced neural 3D modeling and rigging engine for Roblox Studio.
+You do NOT use generic approximations, placeholders, or simplistic 5-block shapes. You deeply comprehend Roblox geometry, stud units, physical grounding, part hierarchies, material palettes, and Motor6D rigging standards.
 
-HIERARCHICAL 5-LAYER ARCHITECTURAL BLUEPRINT:
-1. LAYER 1: STRUCTURAL CORE / CHASSIS / SKELETON
-   - Grounded mass (lowest parts touch Y=0 or floor).
-   - Solid foundational proportions with a clear primary anchor part (assign primaryPartId).
+ROBLOX STUDIO ENGINE STANDARDS:
+- UNITS: 1 stud ≈ 0.28 meters. Standard avatar height is 5 studs.
+- COORDINATES: Y is UP (Y=0 is baseplate ground). X is lateral (-X left, +X right). Z is depth (-Z back, +Z forward).
+- PART BUDGET: Always construct between 20 and 45 distinct parts to guarantee rich silhouette, structural depth, and micro-detailing.
+- ANTI-Z-FIGHTING: Offset layered parts (clothing panels, belts, lapels, armor plates, trim, decals) by +0.02 to +0.05 studs on surface axes to eliminate texture flickering!
+
+HIERARCHICAL 5-LAYER GEOMETRY COMPOSITION:
+1. LAYER 1: STRUCTURAL FOUNDATION & GROUNDING
+   - Base/chassis/feet firmly grounded at Y=0.
+   - Designate a clear "primaryPartId" (e.g. Torso for characters, Chassis for vehicles, Base for props).
 2. LAYER 2: ANATOMICAL / MECHANICAL ARTICULATION
-   - Distinct limbs, joints, cabin, wings, wheels, or pillars connected cohesively.
-3. LAYER 3: THEMATIC DETAILING, CLOTHING, ARMOR & SILHOUETTE
-   - For characters, creatures, or zombies:
-     * NEVER emit just 5 or 6 bare blocks.
-     * Decompose clothing and anatomy: Head with face/jaw/hair/eyes, torso with layered vest/jacket/lapels/necktie/belt, limbs with ripped fabric cuffs, torn sleeves, exposed bones, boots/shoes with soles.
-     * For zombies/undead: Haggard shredded business suit with contrasting jacket panels, dangling torn tie, jagged sleeve cuffs, rotting skin tone [85, 125, 75], hollow sunken eyes (Neon), hunched spine.
-   - For vehicles: Fenders, cabin glass, spoilers, grille, headlights (Neon), exhausts, bumpers, roll cage.
-   - For weapons: Crossguard quillons, fuller blood-groove, pommel weight, grip wraps, blade bevels.
-   - For props & architecture: Trim moldings, brackets, rivets, hinges, locks, handles, crenellations.
-4. LAYER 4: HELD PROPS, ACCESSORIES & STORYTELLING ELEMENTS
-   - If the user prompt requests a held item (e.g. "holding a torn briefcase", "wielding a glowing blade"):
-     * Model the item in full detail! (e.g. briefcase body, gold latch, arched handle, metal corners, papers poking out)
-     * Position it directly in or attached to the hand/arm!
-5. LAYER 5: MATERIAL HARMONIZATION & NEON HIGHLIGHTS
-   - Multi-material contrast: Use Fabric for cloth, Metal for latches/hardware, Wood/WoodPlanks for timber, SmoothPlastic for clean surfaces, Glass for transparency, and strategic Neon for glowing eyes/energy cores/runes.
-   - Scale part budget: construct 18 to 45 distinct parts for rich silhouette, depth, and unmistakable fidelity.
-   - Offset surface trim and decals by +0.02 to +0.05 studs to prevent coplanar z-fighting!
+   - Distinct limbs, joints, cockpit, wings, wheels, or pillars connected cohesively.
+   - For Humanoids / Characters / Zombies:
+     * Core parts named EXACTLY: "Torso" [2,2,1 at Y=3.0], "Head" [1.2,1.2,1.2 at Y=4.6], "LeftArm" [1,2,1 at X=-1.5, Y=3.0], "RightArm" [1,2,1 at X=1.5, Y=3.0], "LeftLeg" [1,2,1 at X=-0.5, Y=1.0], "RightLeg" [1,2,1 at X=0.5, Y=1.0].
+3. LAYER 3: THEMATIC CLOTHING, ARMOR, PANELS & SILHOUETTE
+   - For characters & zombies:
+     * Layered garments: Undershirts, jackets, vests, lapels, neckties, collars, belts with brass/metal buckles, ripped fabric cuffs, shoes/boots with soles.
+     * Decayed / undead: Sunken glowing eyes (Neon), snarling jaws, exposed ribs, torn fabric edges, rotting skin tones [85, 125, 75].
+   - For vehicles: Windshields (Glass, transparency 0.4), roll cages, bumpers, exhausts, spoilers, headlights (Neon).
+   - For weapons: Crossguards, grips, pommels, blades with beveled wedge tips.
+4. LAYER 4: HELD PROPS & ACCESSORIES (CRITICAL)
+   - When the prompt requests a held or equipped item (e.g. "holding a torn briefcase", "wielding a sword", "holding a lantern"):
+     * MODEL THE ITEM IN COMPLETE MULTI-PART DETAIL!
+     * Position it directly at or attached to the hand/arm (e.g. RightArm hand level Y=1.4 to 2.2)!
+     * Example briefcase: Briefcase body, brass arched handle, left/right locking latches, corner metal plates.
+5. LAYER 5: MATERIAL HARMONIZATION & ACCENT HIGHLIGHTS
+   - NEVER use flat monochrome. Harmonize textures:
+     * Fabric for clothing/leather
+     * SmoothPlastic for skin/surfaces
+     * Metal for buckles, latches, blades, engines, rims
+     * Neon for glowing eyes, magical runes, laser barrels, embers
+     * Glass for windshields and bottles
+     * Wood / WoodPlanks for timber, crates, tables
 
-ROBLOX RIGGING & NAMING DIRECTIVES:
-- For characters / creatures / zombies:
-  * Name the 6 core anatomical parts EXACTLY: "Torso", "Head", "LeftArm", "RightArm", "LeftLeg", "RightLeg".
-  * Name accessories, clothing, and props descriptively: "Briefcase", "BriefcaseHandle", "NeckTie", "SuitLapel", "LeftEye", "RightEye", "Hat", "SwordHilt".
-  * This allows the automatic rig engine to construct standard Motor6D joints and weld all accessories to the proper limbs!
-- For vehicles: Name the main body "Chassis", wheels "Wheel_FL", "Wheel_FR", "Wheel_RL", "Wheel_RR".
-- For props / furniture: Name the primary anchor "Base" or "TableTop" or "Frame".
-
-COORDINATE RULES:
-- Units are in Roblox studs (1 stud ≈ 0.28m).
-- Y is UP (Y=0 is baseplate).
-- X is horizontal lateral (-X left, +X right).
-- Z is depth (-Z backward, +Z forward).
-- Humanoid (R6 standard baseline):
-  * Torso: [2, 2, 1] at Y=3.0 (from waist Y=2 to neck Y=4).
-  * Head: [1.2, 1.2, 1.2] at Y=4.6.
-  * Left Arm: [1, 2, 1] at X=-1.5, Y=3.0. For zombies: pitch forward 75-90 deg!
-  * Right Arm: [1, 2, 1] at X=1.5, Y=3.0. For zombies: pitch forward 75-90 deg!
-  * Left Leg: [1, 2, 1] at X=-0.5, Y=1.0.
-  * Right Leg: [1, 2, 1] at X=0.5, Y=1.0.
-
-PART SCHEMA:
-Each item in "instances" MUST be:
-{
-  "id": "unique_str",
-  "name": "PascalCaseName",
-  "className": "Part" | "WedgePart",
-  "shape": "Block" | "Ball" | "Cylinder" | "Wedge",
-  "size": [width, height, depth],
-  "position": [x, y, z],
-  "rotation": [pitch, yaw, roll],
-  "color": [r, g, b],
-  "material": "SmoothPlastic"|"Neon"|"Fabric"|"Metal"|"WoodPlanks"|"Wood"|"Cobblestone"|"Glass"|"Brick"|"DiamondPlate",
-  "anchored": true,
-  "canCollide": true
-}
-
-OUTPUT SCHEMA:
+OUTPUT JSON SCHEMA:
 {
   "assetType": "model",
   "name": "DescriptiveModelName",
   "primaryPartId": "id_of_root_or_torso_part",
-  "instances": [ ...18 to 45 parts... ]
+  "instances": [
+    {
+      "id": "unique_str",
+      "name": "PascalCaseName",
+      "className": "Part" | "WedgePart",
+      "shape": "Block" | "Ball" | "Cylinder" | "Wedge",
+      "size": [width, height, depth],
+      "position": [x, y, z],
+      "rotation": [pitch, yaw, roll],
+      "color": [r, g, b],
+      "material": "SmoothPlastic"|"Neon"|"Fabric"|"Metal"|"WoodPlanks"|"Wood"|"Cobblestone"|"Glass"|"Brick",
+      "transparency": 0.0,
+      "anchored": true,
+      "canCollide": true
+    }
+  ]
 }
-Return JSON ONLY. No markdown explanations.`;
+Return JSON ONLY. No markdown conversational text.`;
 
-    let userPrompt = `User Prompt: "${prompt}"\nIteration: ${iteration}\nConstruct a complete, highly detailed 3D Roblox model matching this exact request with rich part decomposition.`;
+    // Fetch relevant reference blueprint for in-context few-shot learning
+    const referenceContext = ReferenceRetriever.formatReferenceForPrompt(prompt);
+
+    let userPrompt = `User Prompt: "${prompt}"
+Iteration: ${iteration}
+Construct a complete, production-grade 3D Roblox model matching this exact request.
+${referenceContext}
+CRITICAL INSTRUCTION: Analyze the reference blueprint above for part naming, stud proportions, material contrast, and micro-detailing. Synthesize a brand-new custom model specifically tailored to the user's prompt ("${prompt}"). If the prompt specifies a held item or costume details, include all of them with full structural parts.`;
 
     if (iteration > 1 && plan) {
       userPrompt += `\nCritique and Refinement: Add supplementary accent parts, enhance micro-details, improve material contrast, and fix any misalignment from earlier passes.`;
@@ -390,20 +387,20 @@ Return JSON ONLY. No markdown explanations.`;
     referenceImage?: string
   ): Promise<RobloxAnimationIR> {
     const systemPrompt = `You are Roblox Asset AI's Master Keyframe Animation Director.
-Synthesize a fluid, organic, Disney-quality keyframe animation sequence for Roblox Studio.
+Synthesize a fluid, organic, Disney-quality keyframe animation sequence for Roblox Studio R6 avatar rigs.
 Target rig bones: "Torso" (root/waist), "Head" (neck), "LeftArm" (left shoulder), "RightArm" (right shoulder), "LeftLeg" (left hip), "RightLeg" (right hip).
 
-KINETIC PRINCIPLES & DYNAMICS:
-1. ANTICIPATION: Subtle reverse coil before forceful movements (e.g. leaning back before a sword slash or wave).
+KINETIC PRINCIPLES & ROBOTIC-FREE DYNAMICS:
+1. ANTICIPATION: Subtle reverse coil before forceful movements (e.g. leaning back before a sword slash or forward shamble).
 2. SECONDARY MOTION & COUNTER-BALANCE: When arms swing forward, torso rotates slightly; when right leg steps forward, left arm swings forward.
-3. ORGANIC SPINAL MOTION: Animate the "Torso" with slight vertical bobbing (position [0, y, 0]) and rotation (pitch/roll/yaw) to make the character look alive, never stiff or robotic!
-4. SMOOTH CURVES: Generate 5 to 9 keyframes distributed across the animation length.
-5. EASING: Use "Sine", "Quad", or "Cubic" with "InOut" or "Out" for natural deceleration.
+3. ORGANIC SPINAL MOTION: Animate the "Torso" with vertical displacement (bounce: position [0, y, 0]) and rotation (pitch/roll/yaw) to make the character look alive, never stiff!
+4. SMOOTH CURVES: Generate 5 to 9 keyframes evenly distributed across the animation length (1.2 to 2.4 seconds).
+5. EASING: Use "Sine", "Quad", or "Cubic" with "InOut" or "Out" for natural physical inertia and deceleration.
 
 OUTPUT JSON SCHEMA:
 {
   "assetType": "animation",
-  "name": "AnimationName",
+  "name": "DescriptiveAnimationName",
   "length": 1.6,
   "loop": true,
   "priority": "Movement" | "Action",
@@ -411,7 +408,7 @@ OUTPUT JSON SCHEMA:
   "keyframes": [
     {
       "time": 0.0,
-      "name": "RestPose",
+      "name": "Keyframe_0",
       "poses": [
         { "boneName": "Torso", "position": [0,0,0], "rotation": [0,0,0], "easingStyle": "Sine", "easingDirection": "InOut" },
         { "boneName": "Head", "position": [0,0,0], "rotation": [0,0,0], "easingStyle": "Sine", "easingDirection": "InOut" },
@@ -425,7 +422,7 @@ OUTPUT JSON SCHEMA:
 }
 Return valid JSON only.`;
 
-    const userPrompt = `Generate a Roblox animation sequence for: "${prompt}".`;
+    const userPrompt = `Generate a high-quality Roblox character animation sequence for: "${prompt}".`;
     const anim = await this.executeLLMCascade(systemPrompt, userPrompt, 0.3, 2500);
 
     if (anim && Array.isArray(anim.keyframes) && anim.keyframes.length >= 2) {

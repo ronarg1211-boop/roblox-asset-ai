@@ -125,7 +125,7 @@ export class RobloxAssetCatalog {
 
     // 6. CHARACTERS & CREATURES
     if (p.includes('zombie') || p.includes('undead') || p.includes('ghoul') || p.includes('infected') || p.includes('walker')) {
-      return this.buildZombie(iteration);
+      return this.buildZombie(iteration, prompt);
     }
     if (p.includes('skeleton') || p.includes('skull') || p.includes('bone warrior')) {
       return this.buildSkeleton(iteration);
@@ -1527,10 +1527,14 @@ export class RobloxAssetCatalog {
     return { name: 'RobloxHumanoidRig', instances, primaryPartId: 'hr_torso' };
   }
 
-  private static buildZombie(iteration: number): AssetGeneratorResult {
+  private static buildZombie(iteration: number, prompt: string = ''): AssetGeneratorResult {
     const instances: RobloxInstanceIR[] = [];
+    const p = prompt.toLowerCase();
+    const isBusiness = p.includes('suit') || p.includes('business') || p.includes('office') || p.includes('briefcase') || p.includes('tie');
+    const hasBriefcase = p.includes('briefcase') || p.includes('case') || isBusiness;
 
-    // Classic Roblox R6 Zombie Torso (2 x 2 x 1 studs) - Tattered dirty shirt
+    // Torso: Charcoal Suit or Rotting Shirt
+    const torsoColor: [number, number, number] = isBusiness ? [45, 48, 55] : [60, 95, 100];
     const torso: RobloxPartIR = {
       id: 'zb_torso',
       name: 'Torso',
@@ -1538,13 +1542,101 @@ export class RobloxAssetCatalog {
       shape: 'Block',
       size: [2.0, 2.0, 1.0],
       position: [0, 3.0, 0],
-      rotation: [0, 0, 0],
-      color: [60, 95, 100], // Decay Teal / Dirty Shirt
+      rotation: [6, 4, -3],
+      color: torsoColor,
       material: 'Fabric',
       anchored: true,
       canCollide: true,
     };
     instances.push(torso);
+
+    if (isBusiness) {
+      // White Undershirt
+      instances.push({
+        id: 'zb_shirt',
+        name: 'Undershirt',
+        className: 'Part',
+        shape: 'Block',
+        size: [0.8, 1.5, 0.15],
+        position: [0, 3.2, 0.52],
+        rotation: [6, 4, -3],
+        color: [220, 225, 220],
+        material: 'Fabric',
+        anchored: true,
+        canCollide: false,
+      });
+
+      // Torn Crimson Necktie
+      instances.push({
+        id: 'zb_tie',
+        name: 'TornNecktie',
+        className: 'Part',
+        shape: 'Block',
+        size: [0.25, 1.2, 0.12],
+        position: [0.05, 3.1, 0.6],
+        rotation: [6, 4, -8],
+        color: [175, 40, 40],
+        material: 'Fabric',
+        anchored: true,
+        canCollide: false,
+      });
+
+      // Suit Lapels
+      instances.push({
+        id: 'zb_lapel_l',
+        name: 'SuitLapelLeft',
+        className: 'Part',
+        shape: 'Block',
+        size: [0.4, 1.6, 0.12],
+        position: [-0.55, 3.2, 0.55],
+        rotation: [6, 4, -15],
+        color: [38, 40, 48],
+        material: 'Fabric',
+        anchored: true,
+        canCollide: false,
+      });
+      instances.push({
+        id: 'zb_lapel_r',
+        name: 'SuitLapelRight',
+        className: 'Part',
+        shape: 'Block',
+        size: [0.4, 1.6, 0.12],
+        position: [0.55, 3.2, 0.55],
+        rotation: [6, 4, 15],
+        color: [38, 40, 48],
+        material: 'Fabric',
+        anchored: true,
+        canCollide: false,
+      });
+
+      // Leather Belt & Buckle
+      instances.push({
+        id: 'zb_belt',
+        name: 'LeatherBelt',
+        className: 'Part',
+        shape: 'Block',
+        size: [2.05, 0.25, 1.05],
+        position: [0, 2.1, 0],
+        rotation: [6, 4, -3],
+        color: [30, 25, 22],
+        material: 'SmoothPlastic',
+        anchored: true,
+        canCollide: false,
+      });
+      instances.push({
+        id: 'zb_buckle',
+        name: 'BrassBuckle',
+        className: 'Part',
+        shape: 'Block',
+        size: [0.35, 0.3, 0.12],
+        position: [0, 2.1, 0.55],
+        rotation: [6, 4, -3],
+        color: [215, 175, 55],
+        material: 'Metal',
+        anchored: true,
+        canCollide: false,
+      });
+    }
 
     // Decayed Zombie Head (1.2 x 1.2 x 1.2) - Rotten Green
     instances.push({
@@ -1553,9 +1645,9 @@ export class RobloxAssetCatalog {
       className: 'Part',
       shape: 'Block',
       size: [1.2, 1.2, 1.2],
-      position: [0, 4.6, 0],
-      rotation: [4, 6, -3], // Characteristic tilted zombie head
-      color: [92, 150, 58], // Iconic Roblox Zombie Rotten Green
+      position: [0, 4.6, 0.05],
+      rotation: [4, 6, -3],
+      color: [92, 150, 58],
       material: 'SmoothPlastic',
       anchored: true,
       canCollide: true,
@@ -1568,9 +1660,9 @@ export class RobloxAssetCatalog {
       className: 'Part',
       shape: 'Block',
       size: [0.25, 0.25, 0.1],
-      position: [-0.3, 4.7, 0.62],
+      position: [-0.3, 4.7, 0.65],
       rotation: [4, 6, -3],
-      color: [240, 45, 30], // Menacing Glowing Red Eye
+      color: [255, 45, 35],
       material: 'Neon',
       anchored: true,
       canCollide: false,
@@ -1583,9 +1675,9 @@ export class RobloxAssetCatalog {
       className: 'Part',
       shape: 'Block',
       size: [0.22, 0.22, 0.1],
-      position: [0.3, 4.65, 0.62],
+      position: [0.3, 4.65, 0.65],
       rotation: [4, 6, -3],
-      color: [235, 220, 110], // Pale Sickly Yellow Pupil
+      color: [235, 220, 110],
       material: 'SmoothPlastic',
       anchored: true,
       canCollide: false,
@@ -1598,7 +1690,7 @@ export class RobloxAssetCatalog {
       className: 'Part',
       shape: 'Block',
       size: [0.55, 0.15, 0.1],
-      position: [0, 4.22, 0.62],
+      position: [0, 4.22, 0.65],
       rotation: [4, 6, -3],
       color: [35, 25, 20],
       material: 'SmoothPlastic',
@@ -1606,69 +1698,184 @@ export class RobloxAssetCatalog {
       canCollide: false,
     });
 
-    // Classic Roblox Zombie Left Arm - Raised Straight Forward (90 deg on X)
+    // Arms: Left Arm Raised Forward
     instances.push({
       id: 'zb_arm_l',
       name: 'LeftArm',
       className: 'Part',
       shape: 'Block',
       size: [1.0, 2.0, 1.0],
-      position: [-1.5, 3.0, 1.0],
-      rotation: [90, 5, 0],
-      color: [92, 150, 58], // Rotten Green Skin
+      position: [-1.5, 3.1, 0.8],
+      rotation: [85, 5, 0],
+      color: [92, 150, 58],
       material: 'SmoothPlastic',
       anchored: true,
       canCollide: true,
     });
 
-    // Classic Roblox Zombie Right Arm - Raised Straight Forward (90 deg on X)
+    // Right Arm: Positioned to hold briefcase or raised
+    const rArmRot: [number, number, number] = hasBriefcase ? [30, -10, 8] : [88, -5, 0];
+    const rArmPos: [number, number, number] = hasBriefcase ? [1.5, 2.8, 0.2] : [1.5, 3.0, 0.8];
     instances.push({
       id: 'zb_arm_r',
       name: 'RightArm',
       className: 'Part',
       shape: 'Block',
       size: [1.0, 2.0, 1.0],
-      position: [1.5, 3.0, 1.0],
-      rotation: [90, -5, 0],
-      color: [92, 150, 58], // Rotten Green Skin
+      position: rArmPos,
+      rotation: rArmRot,
+      color: [92, 150, 58],
       material: 'SmoothPlastic',
       anchored: true,
       canCollide: true,
     });
 
-    // Left Leg - Dirty Ripped Trousers
+    if (isBusiness) {
+      // Torn Jacket Sleeves
+      instances.push({
+        id: 'zb_sleeve_l',
+        name: 'TornSleeveLeft',
+        className: 'Part',
+        shape: 'Block',
+        size: [1.1, 1.2, 1.1],
+        position: [-1.5, 3.4, 0.4],
+        rotation: [85, 5, 0],
+        color: [45, 48, 55],
+        material: 'Fabric',
+        anchored: true,
+        canCollide: false,
+      });
+      instances.push({
+        id: 'zb_sleeve_r',
+        name: 'TornSleeveRight',
+        className: 'Part',
+        shape: 'Block',
+        size: [1.1, 1.3, 1.1],
+        position: [1.5, 3.1, 0.1],
+        rotation: rArmRot,
+        color: [45, 48, 55],
+        material: 'Fabric',
+        anchored: true,
+        canCollide: false,
+      });
+    }
+
+    // Held Accessory: Weathered Briefcase attached to Right Arm
+    if (hasBriefcase) {
+      instances.push({
+        id: 'zb_case_body',
+        name: 'Briefcase',
+        className: 'Part',
+        shape: 'Block',
+        size: [0.6, 1.8, 2.4],
+        position: [1.8, 1.4, 0.5],
+        rotation: [10, -5, 0],
+        color: [85, 45, 25],
+        material: 'WoodPlanks',
+        anchored: true,
+        canCollide: false,
+      });
+      instances.push({
+        id: 'zb_case_handle',
+        name: 'BriefcaseHandle',
+        className: 'Part',
+        shape: 'Cylinder',
+        size: [0.15, 0.8, 0.15],
+        position: [1.8, 2.35, 0.5],
+        rotation: [0, 0, 90],
+        color: [215, 175, 55],
+        material: 'Metal',
+        anchored: true,
+        canCollide: false,
+      });
+      instances.push({
+        id: 'zb_case_latch_l',
+        name: 'BrassLatchLeft',
+        className: 'Part',
+        shape: 'Block',
+        size: [0.65, 0.2, 0.3],
+        position: [1.8, 1.4, -0.3],
+        rotation: [10, -5, 0],
+        color: [225, 185, 60],
+        material: 'Metal',
+        anchored: true,
+        canCollide: false,
+      });
+      instances.push({
+        id: 'zb_case_latch_r',
+        name: 'BrassLatchRight',
+        className: 'Part',
+        shape: 'Block',
+        size: [0.65, 0.2, 0.3],
+        position: [1.8, 1.4, 1.3],
+        rotation: [10, -5, 0],
+        color: [225, 185, 60],
+        material: 'Metal',
+        anchored: true,
+        canCollide: false,
+      });
+    }
+
+    // Legs
+    const legColor: [number, number, number] = isBusiness ? [38, 40, 48] : [42, 48, 65];
     instances.push({
       id: 'zb_leg_l',
       name: 'LeftLeg',
       className: 'Part',
       shape: 'Block',
       size: [1.0, 2.0, 1.0],
-      position: [-0.5, 1.0, 0],
-      rotation: [0, 0, 0],
-      color: [42, 48, 65], // Dark Tattered Blue
+      position: [-0.5, 1.0, 0.1],
+      rotation: [12, 0, 0],
+      color: legColor,
       material: 'Fabric',
       anchored: true,
       canCollide: true,
     });
-
-    // Right Leg - Dirty Ripped Trousers
     instances.push({
       id: 'zb_leg_r',
       name: 'RightLeg',
       className: 'Part',
       shape: 'Block',
       size: [1.0, 2.0, 1.0],
-      position: [0.5, 1.0, 0],
-      rotation: [0, 0, 0],
-      color: [42, 48, 65],
+      position: [0.5, 1.0, -0.1],
+      rotation: [-10, 0, 0],
+      color: legColor,
       material: 'Fabric',
       anchored: true,
       canCollide: true,
     });
 
-    // Iteration 2: Ripped Clothing & Exposed Skeletal Ribcage
+    if (isBusiness) {
+      instances.push({
+        id: 'zb_shoe_l',
+        name: 'LeftShoe',
+        className: 'Part',
+        shape: 'Block',
+        size: [1.05, 0.4, 1.3],
+        position: [-0.5, 0.2, 0.25],
+        rotation: [12, 0, 0],
+        color: [20, 18, 18],
+        material: 'SmoothPlastic',
+        anchored: true,
+        canCollide: false,
+      });
+      instances.push({
+        id: 'zb_shoe_r',
+        name: 'RightShoe',
+        className: 'Part',
+        shape: 'Block',
+        size: [1.05, 0.4, 1.3],
+        position: [0.5, 0.2, 0.05],
+        rotation: [-10, 0, 0],
+        color: [20, 18, 18],
+        material: 'SmoothPlastic',
+        anchored: true,
+        canCollide: false,
+      });
+    }
+
+    // Iteration 2: Detail Accents
     if (iteration >= 2) {
-      // Exposed Bone Ribs
       instances.push({
         id: 'zb_ribs',
         name: 'ExposedRibcage',
@@ -1676,29 +1883,13 @@ export class RobloxAssetCatalog {
         shape: 'Block',
         size: [0.7, 0.9, 0.2],
         position: [-0.35, 2.9, 0.52],
-        rotation: [0, 0, 0],
-        color: [238, 235, 225], // Bone White
+        rotation: [6, 4, -3],
+        color: [238, 235, 225],
         material: 'SmoothPlastic',
         anchored: true,
         canCollide: false,
       });
 
-      // Torn Pants Knee Patch exposing decayed green skin
-      instances.push({
-        id: 'zb_knee_patch',
-        name: 'TornKneeRot',
-        className: 'Part',
-        shape: 'Block',
-        size: [0.55, 0.45, 0.15],
-        position: [0.5, 1.15, 0.52],
-        rotation: [0, 0, 0],
-        color: [92, 150, 58],
-        material: 'SmoothPlastic',
-        anchored: true,
-        canCollide: false,
-      });
-
-      // Toxic Slime Drool
       instances.push({
         id: 'zb_slime',
         name: 'ToxicSlimeDrip',
@@ -1707,16 +1898,15 @@ export class RobloxAssetCatalog {
         size: [0.25, 0.35, 0.25],
         position: [0.2, 4.0, 0.65],
         rotation: [0, 0, 0],
-        color: [80, 255, 40], // Glowing Radioactive Neon Slime
+        color: [80, 255, 40],
         material: 'Neon',
         anchored: true,
         canCollide: false,
       });
     }
 
-    // Iteration 3: Exposed Brain & Broken Rusty Shackle
+    // Iteration 3: Exposed Brain
     if (iteration >= 3) {
-      // Exposed Brain Matter on Cranium
       instances.push({
         id: 'zb_brain',
         name: 'ExposedBrain',
@@ -1725,29 +1915,18 @@ export class RobloxAssetCatalog {
         size: [0.55, 0.35, 0.6],
         position: [0.35, 5.25, -0.1],
         rotation: [0, 8, -5],
-        color: [175, 65, 75], // Raw Brain Tissue
+        color: [175, 65, 75],
         material: 'SmoothPlastic',
-        anchored: true,
-        canCollide: false,
-      });
-
-      // Broken Iron Wrist Shackle
-      instances.push({
-        id: 'zb_shackle',
-        name: 'BrokenPrisonerShackle',
-        className: 'Part',
-        shape: 'Cylinder',
-        size: [1.2, 0.3, 1.2],
-        position: [-1.5, 3.0, 1.8],
-        rotation: [0, 0, 90],
-        color: [55, 50, 48],
-        material: 'Metal',
         anchored: true,
         canCollide: false,
       });
     }
 
-    return { name: 'RobloxInfectedZombie', instances, primaryPartId: 'zb_torso' };
+    return {
+      name: isBusiness ? 'BusinessZombie' : 'RobloxInfectedZombie',
+      instances,
+      primaryPartId: 'zb_torso',
+    };
   }
 
   private static buildSkeleton(iteration: number): AssetGeneratorResult {

@@ -88,6 +88,7 @@ export default function Viewport3D({
   const [showGrid, setShowGrid] = useState(true);
   const [wireframe, setWireframe] = useState(false);
   const [lightingPreset, setLightingPreset] = useState<'studio' | 'outdoor' | 'neon'>('studio');
+  const [animationTargetMode, setAnimationTargetMode] = useState<'custom' | 'mannequin'>('custom');
 
   // Animation Playback State
   const [isPlaying, setIsPlaying] = useState(false);
@@ -603,17 +604,16 @@ export default function Viewport3D({
       return n.includes('head') || n.includes('torso') || n.includes('arm') || n.includes('leg');
     });
 
-    // 1. If viewing animation and the model isn't an R6 character, spawn the authentic Roblox R6 Mannequin!
+    const useMannequin = isAnimationMode && (!isCharacterModel || animationTargetMode === 'mannequin');
     let mannequinSpawned = false;
-    if (isAnimationMode && !isCharacterModel) {
+
+    if (useMannequin) {
       const mannequin = buildRobloxMannequin();
       mannequinGroup.add(mannequin);
       mannequinSpawned = true;
     }
 
-    // 2. Build Model Instances if present and appropriate
-    // In animation mode, only render model instances if it is a character or a handheld accessory/weapon
-    const shouldRenderModel = hasModelInstances && (!isAnimationMode || isCharacterModel || (
+    const shouldRenderModel = hasModelInstances && (!isAnimationMode || !useMannequin || (
       modelIR?.name && ['sword', 'blade', 'shield', 'briefcase', 'wand', 'torch', 'gun'].some(w => modelIR.name.toLowerCase().includes(w))
     ));
 
@@ -633,7 +633,7 @@ export default function Viewport3D({
       };
       modelIR.instances.forEach(traverse);
 
-      for (const part of parts) {
+      const createPartMesh = (part: RobloxPartIR) => {
         const [sx, sy, sz] = part.size || [2, 2, 2];
         const shape: RobloxShape = part.shape || (part.className === 'WedgePart' ? 'Wedge' : 'Block');
 
@@ -667,24 +667,110 @@ export default function Viewport3D({
         });
 
         const mesh = new THREE.Mesh(geometry, material);
-        const [px, py, pz] = part.position || [0, 0, 0];
-        const [rx, ry, rz] = part.rotation || [0, 0, 0];
-        const rad = Math.PI / 180;
-
-        mesh.position.set(px, py, pz);
-        mesh.rotation.set(rx * rad, ry * rad, rz * rad);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
-
         mesh.userData = {
           partData: part,
           name: part.name,
-          restPosition: mesh.position.clone(),
-          restRotation: mesh.rotation.clone(),
         };
+        return mesh;
+      };
 
-        partsMeshMap.current.set(part.name, mesh);
-        modelGroup.add(mesh);
+      if (isAnimationMode && isCharacterModel && !useMannequin) {
+        // Build genuine articulated R6 joint hierarchy for custom character!
+        const rigRoot = new THREE.Group();
+        rigRoot.name = 'CustomCharacterR6Rig';
+        modelGroup.add(rigRoot);
+
+        // 1. Torso Pivot (waist level Y=2.0)
+        const torsoPivot = new THREE.Group();
+        torsoPivot.position.set(0, 2.0, 0);
+        torsoPivot.userData = { restPos: torsoPivot.position.clone(), restRot: torsoPivot.rotation.clone() };
+        rigRoot.add(torsoPivot);
+        rigPivotsMap.current.set('Torso', torsoPivot);
+
+        // 2. Head Pivot (neck at Y=2.0 relative to torso = world Y=4.0)
+        const headPivot = new THREE.Group();
+        headPivot.position.set(0, 2.0, 0);
+        headPivot.userData = { restPos: headPivot.position.clone(), restRot: headPivot.rotation.clone() };
+        torsoPivot.add(headPivot);
+        rigPivotsMap.current.set('Head', headPivot);
+
+        // 3. Left Shoulder Pivot (at X=-1.5, Y=1.8 relative to torso = world Y=3.8)
+        const leftShoulderPivot = new THREE.Group();
+        leftShoulderPivot.position.set(-1.5, 1.8, 0);
+        leftShoulderPivot.userData = { restPos: leftShoulderPivot.position.clone(), restRot: leftShoulderPivot.rotation.clone() };
+        torsoPivot.add(leftShoulderPivot);
+        rigPivotsMap.current.set('LeftArm', leftShoulderPivot);
+
+        // 4. Right Shoulder Pivot (at X=1.5, Y=1.8 relative to torso = world Y=3.8)
+        const rightShoulderPivot = new THREE.Group();
+        rightShoulderPivot.position.set(1.5, 1.8, 0);
+        rightShoulderPivot.userData = { restPos: rightShoulderPivot.position.clone(), restRot: rightShoulderPivot.rotation.clone() };
+        torsoPivot.add(rightShoulderPivot);
+        rigPivotsMap.current.set('RightArm', rightShoulderPivot);
+
+        // 5. Left Hip Pivot (at X=-0.5, Y=2.0)
+        const leftHipPivot = new THREE.Group();
+        leftHipPivot.position.set(-0.5, 2.0, 0);
+        leftHipPivot.userData = { restPos: leftHipPivot.position.clone(), restRot: leftHipPivot.rotation.clone() };
+        rigRoot.add(leftHipPivot);
+        rigPivotsMap.current.set('LeftLeg', leftHipPivot);
+
+        // 6. Right Hip Pivot (at X=0.5, Y=2.0)
+        const rightHipPivot = new THREE.Group();
+        rightHipPivot.position.set(0.5, 2.0, 0);
+        rightHipPivot.userData = { restPos: rightHipPivot.position.clone(), restRot: rightHipPivot.rotation.clone() };
+        rigRoot.add(rightHipPivot);
+        rigPivotsMap.current.set('RightLeg', rightHipPivot);
+
+        const rad = Math.PI / 180;
+        for (const part of parts) {
+          const mesh = createPartMesh(part);
+          const [px, py, pz] = part.position || [0, 0, 0];
+          const [rx, ry, rz] = part.rotation || [0, 0, 0];
+          mesh.rotation.set(rx * rad, ry * rad, rz * rad);
+
+          const clean = (part.name || '').toLowerCase().replace(/[\s_\-]/g, '');
+
+          if (clean.includes('head') || clean.includes('eye') || clean.includes('hair') || clean.includes('hat') || clean.includes('jaw') || clean.includes('mouth') || clean.includes('brain') || clean.includes('visor') || clean.includes('plume')) {
+            mesh.position.set(px, py - 4.0, pz);
+            headPivot.add(mesh);
+          } else if (clean.includes('leftarm') || clean.includes('larm') || clean.includes('sleeveleft') || clean.includes('leftsleeve') || clean.includes('shackle')) {
+            mesh.position.set(px - (-1.5), py - 3.8, pz);
+            leftShoulderPivot.add(mesh);
+          } else if (clean.includes('rightarm') || clean.includes('rarm') || clean.includes('sleeveright') || clean.includes('rightsleeve') || clean.includes('briefcase') || clean.includes('case') || clean.includes('sword') || clean.includes('blade') || clean.includes('shield') || clean.includes('latch')) {
+            mesh.position.set(px - 1.5, py - 3.8, pz);
+            rightShoulderPivot.add(mesh);
+          } else if (clean.includes('leftleg') || clean.includes('lleg') || clean.includes('leftshoe') || clean.includes('shoel') || clean.includes('knee')) {
+            mesh.position.set(px - (-0.5), py - 2.0, pz);
+            leftHipPivot.add(mesh);
+          } else if (clean.includes('rightleg') || clean.includes('rleg') || clean.includes('rightshoe') || clean.includes('shoer')) {
+            mesh.position.set(px - 0.5, py - 2.0, pz);
+            rightHipPivot.add(mesh);
+          } else {
+            mesh.position.set(px, py - 2.0, pz);
+            torsoPivot.add(mesh);
+          }
+
+          mesh.userData.restPosition = mesh.position.clone();
+          mesh.userData.restRotation = mesh.rotation.clone();
+          partsMeshMap.current.set(part.name, mesh);
+        }
+      } else {
+        // Flat assembly for non-animated models or props
+        const rad = Math.PI / 180;
+        for (const part of parts) {
+          const mesh = createPartMesh(part);
+          const [px, py, pz] = part.position || [0, 0, 0];
+          const [rx, ry, rz] = part.rotation || [0, 0, 0];
+          mesh.position.set(px, py, pz);
+          mesh.rotation.set(rx * rad, ry * rad, rz * rad);
+          mesh.userData.restPosition = mesh.position.clone();
+          mesh.userData.restRotation = mesh.rotation.clone();
+          partsMeshMap.current.set(part.name, mesh);
+          modelGroup.add(mesh);
+        }
       }
     }
 
@@ -716,7 +802,7 @@ export default function Viewport3D({
         cameraRef.current.lookAt(center);
       }
     }
-  }, [modelIR, animationIR, buildRobloxMannequin, createWedgeGeometry, wireframe, applyAnimationAtTime]);
+  }, [modelIR, animationIR, buildRobloxMannequin, createWedgeGeometry, wireframe, applyAnimationAtTime, animationTargetMode]);
 
   // Update Grid Visibility
   useEffect(() => {
@@ -992,6 +1078,15 @@ export default function Viewport3D({
               <Sparkles className="w-2.5 h-2.5" />
               {animationIR.keyframes.length} Keyframes
             </span>
+          )}
+          {animationIR && modelIR?.instances && (
+            <button
+              onClick={() => setAnimationTargetMode((m) => (m === 'custom' ? 'mannequin' : 'custom'))}
+              className="bg-studio-800/90 hover:bg-studio-700 text-roblox-blue hover:text-white font-mono text-[10px] px-2 py-0.5 rounded border border-studio-700 transition flex items-center gap-1 shadow-sm"
+              title="Click to toggle between previewing animation on Custom Character or default R6 Mannequin"
+            >
+              🎭 Rig: {animationTargetMode === 'custom' ? 'Character' : 'Mannequin'}
+            </button>
           )}
         </div>
 

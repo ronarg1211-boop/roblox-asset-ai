@@ -97,6 +97,7 @@ export interface RobloxHumanoidIR extends RobloxBaseInstance {
 
 export interface RobloxSeatIR extends RobloxBaseInstance {
   className: 'Seat' | 'VehicleSeat';
+  shape?: RobloxShape;
   size: [number, number, number];
   position: [number, number, number];
   rotation: [number, number, number];

@@ -98,7 +98,9 @@ def generate_with_model(prompt: str, task: str = "model") -> Dict[str, Any]:
                     "content": (
                         "You are Roblox Asset AI, an ultra-specialized 3D model and animation engine "
                         "for Roblox Studio. Output valid Roblox Intermediate Representation (IR) JSON only. "
-                        "Do not output conversation, pleasantries, or markdown formatting."
+                        "Construct high-fidelity models with 20 to 45 distinct parts, proper R6 limb names "
+                        "(Torso, Head, LeftArm, RightArm, LeftLeg, RightLeg), layered clothing, and held accessories. "
+                        "Strict JSON output only."
                     )
                 },
                 {"role": "user", "content": f"Task: {task} | Request: {prompt}"}
@@ -109,7 +111,7 @@ def generate_with_model(prompt: str, task: str = "model") -> Dict[str, Any]:
             with torch.no_grad():
                 output_ids = LOADED_MODEL.generate(
                     **inputs,
-                    max_new_tokens=2048,
+                    max_new_tokens=2560,
                     temperature=0.3,
                     do_sample=True,
                     top_p=0.9,
@@ -240,142 +242,53 @@ def generate_with_model(prompt: str, task: str = "model") -> Dict[str, Any]:
 
     # Model Task
     if "zombie" in p or "undead" in p or "ghoul" in p:
+        is_business = any(w in p for w in ["suit", "business", "office", "briefcase", "tie"])
+        has_case = "briefcase" in p or "case" in p or is_business
+        t_col = [45, 48, 55] if is_business else [60, 95, 100]
+        l_col = [38, 40, 48] if is_business else [42, 48, 65]
+        r_arm_pos = [1.5, 2.8, 0.2] if has_case else [1.5, 3.0, 1.0]
+        r_arm_rot = [30, -10, 8] if has_case else [90, -5, 0]
+
+        zb_instances = [
+            {"id": "zb_torso", "name": "Torso", "className": "Part", "shape": "Block", "size": [2.0, 2.0, 1.0], "position": [0, 3.0, 0], "rotation": [6, 4, -3], "color": t_col, "material": "Fabric", "anchored": True, "canCollide": True},
+            {"id": "zb_head", "name": "Head", "className": "Part", "shape": "Block", "size": [1.2, 1.2, 1.2], "position": [0, 4.6, 0.05], "rotation": [4, 6, -3], "color": [92, 150, 58], "material": "SmoothPlastic", "anchored": True, "canCollide": True},
+            {"id": "zb_eye_l", "name": "GlowEyeLeft", "className": "Part", "shape": "Block", "size": [0.25, 0.25, 0.1], "position": [-0.3, 4.7, 0.65], "rotation": [4, 6, -3], "color": [255, 45, 35], "material": "Neon", "anchored": True, "canCollide": False},
+            {"id": "zb_eye_r", "name": "EyeRight", "className": "Part", "shape": "Block", "size": [0.22, 0.22, 0.1], "position": [0.3, 4.65, 0.65], "rotation": [4, 6, -3], "color": [235, 220, 110], "material": "SmoothPlastic", "anchored": True, "canCollide": False},
+            {"id": "zb_mouth", "name": "ZombieSnarl", "className": "Part", "shape": "Block", "size": [0.55, 0.15, 0.1], "position": [0, 4.22, 0.65], "rotation": [4, 6, -3], "color": [35, 25, 20], "material": "SmoothPlastic", "anchored": True, "canCollide": False},
+            {"id": "zb_arm_l", "name": "LeftArm", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "position": [-1.5, 3.1, 0.8], "rotation": [85, 5, 0], "color": [92, 150, 58], "material": "SmoothPlastic", "anchored": True, "canCollide": True},
+            {"id": "zb_arm_r", "name": "RightArm", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "position": r_arm_pos, "rotation": r_arm_rot, "color": [92, 150, 58], "material": "SmoothPlastic", "anchored": True, "canCollide": True},
+            {"id": "zb_leg_l", "name": "LeftLeg", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "position": [-0.5, 1.0, 0.1], "rotation": [12, 0, 0], "color": l_col, "material": "Fabric", "anchored": True, "canCollide": True},
+            {"id": "zb_leg_r", "name": "RightLeg", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "position": [0.5, 1.0, -0.1], "rotation": [-10, 0, 0], "color": l_col, "material": "Fabric", "anchored": True, "canCollide": True},
+            {"id": "zb_ribs", "name": "ExposedRibcage", "className": "Part", "shape": "Block", "size": [0.7, 0.9, 0.2], "position": [-0.35, 2.9, 0.52], "rotation": [6, 4, -3], "color": [238, 235, 225], "material": "SmoothPlastic", "anchored": True, "canCollide": False}
+        ]
+
+        if is_business:
+            zb_instances.extend([
+                {"id": "zb_shirt", "name": "Undershirt", "className": "Part", "shape": "Block", "size": [0.8, 1.5, 0.15], "position": [0, 3.2, 0.52], "rotation": [6, 4, -3], "color": [220, 225, 220], "material": "Fabric", "anchored": True, "canCollide": False},
+                {"id": "zb_tie", "name": "TornNecktie", "className": "Part", "shape": "Block", "size": [0.25, 1.2, 0.12], "position": [0.05, 3.1, 0.6], "rotation": [6, 4, -8], "color": [175, 40, 40], "material": "Fabric", "anchored": True, "canCollide": False},
+                {"id": "zb_lapel_l", "name": "SuitLapelLeft", "className": "Part", "shape": "Block", "size": [0.4, 1.6, 0.12], "position": [-0.55, 3.2, 0.55], "rotation": [6, 4, -15], "color": [38, 40, 48], "material": "Fabric", "anchored": True, "canCollide": False},
+                {"id": "zb_lapel_r", "name": "SuitLapelRight", "className": "Part", "shape": "Block", "size": [0.4, 1.6, 0.12], "position": [0.55, 3.2, 0.55], "rotation": [6, 4, 15], "color": [38, 40, 48], "material": "Fabric", "anchored": True, "canCollide": False},
+                {"id": "zb_belt", "name": "LeatherBelt", "className": "Part", "shape": "Block", "size": [2.05, 0.25, 1.05], "position": [0, 2.1, 0], "rotation": [6, 4, -3], "color": [30, 25, 22], "material": "SmoothPlastic", "anchored": True, "canCollide": False},
+                {"id": "zb_buckle", "name": "BrassBuckle", "className": "Part", "shape": "Block", "size": [0.35, 0.3, 0.12], "position": [0, 2.1, 0.55], "rotation": [6, 4, -3], "color": [215, 175, 55], "material": "Metal", "anchored": True, "canCollide": False},
+                {"id": "zb_sleeve_l", "name": "TornSleeveLeft", "className": "Part", "shape": "Block", "size": [1.1, 1.2, 1.1], "position": [-1.5, 3.4, 0.4], "rotation": [85, 5, 0], "color": [45, 48, 55], "material": "Fabric", "anchored": True, "canCollide": False},
+                {"id": "zb_sleeve_r", "name": "TornSleeveRight", "className": "Part", "shape": "Block", "size": [1.1, 1.3, 1.1], "position": [1.5, 3.1, 0.1], "rotation": r_arm_rot, "color": [45, 48, 55], "material": "Fabric", "anchored": True, "canCollide": False},
+                {"id": "zb_shoe_l", "name": "LeftShoe", "className": "Part", "shape": "Block", "size": [1.05, 0.4, 1.3], "position": [-0.5, 0.2, 0.25], "rotation": [12, 0, 0], "color": [20, 18, 18], "material": "SmoothPlastic", "anchored": True, "canCollide": False},
+                {"id": "zb_shoe_r", "name": "RightShoe", "className": "Part", "shape": "Block", "size": [1.05, 0.4, 1.3], "position": [0.5, 0.2, 0.05], "rotation": [-10, 0, 0], "color": [20, 18, 18], "material": "SmoothPlastic", "anchored": True, "canCollide": False}
+            ])
+
+        if has_case:
+            zb_instances.extend([
+                {"id": "zb_case_body", "name": "Briefcase", "className": "Part", "shape": "Block", "size": [0.6, 1.8, 2.4], "position": [1.8, 1.4, 0.5], "rotation": [10, -5, 0], "color": [85, 45, 25], "material": "WoodPlanks", "anchored": True, "canCollide": False},
+                {"id": "zb_case_handle", "name": "BriefcaseHandle", "className": "Part", "shape": "Cylinder", "size": [0.15, 0.8, 0.15], "position": [1.8, 2.35, 0.5], "rotation": [0, 0, 90], "color": [215, 175, 55], "material": "Metal", "anchored": True, "canCollide": False},
+                {"id": "zb_case_latch_l", "name": "BrassLatchLeft", "className": "Part", "shape": "Block", "size": [0.65, 0.2, 0.3], "position": [1.8, 1.4, -0.3], "rotation": [10, -5, 0], "color": [225, 185, 60], "material": "Metal", "anchored": True, "canCollide": False},
+                {"id": "zb_case_latch_r", "name": "BrassLatchRight", "className": "Part", "shape": "Block", "size": [0.65, 0.2, 0.3], "position": [1.8, 1.4, 1.3], "rotation": [10, -5, 0], "color": [225, 185, 60], "material": "Metal", "anchored": True, "canCollide": False}
+            ])
+
         return {
             "assetType": "model",
-            "name": "RobloxInfectedZombie",
+            "name": "BusinessZombie" if is_business else "RobloxInfectedZombie",
             "primaryPartId": "zb_torso",
-            "instances": [
-                {
-                    "id": "zb_torso",
-                    "name": "Torso",
-                    "className": "Part",
-                    "shape": "Block",
-                    "size": [2.0, 2.0, 1.0],
-                    "position": [0, 3.0, 0],
-                    "rotation": [0, 0, 0],
-                    "color": [60, 95, 100],
-                    "material": "Fabric",
-                    "anchored": True,
-                    "canCollide": True
-                },
-                {
-                    "id": "zb_head",
-                    "name": "Head",
-                    "className": "Part",
-                    "shape": "Block",
-                    "size": [1.2, 1.2, 1.2],
-                    "position": [0, 4.6, 0],
-                    "rotation": [4, 6, -3],
-                    "color": [92, 150, 58],
-                    "material": "SmoothPlastic",
-                    "anchored": True,
-                    "canCollide": True
-                },
-                {
-                    "id": "zb_eye_l",
-                    "name": "GlowEyeLeft",
-                    "className": "Part",
-                    "shape": "Block",
-                    "size": [0.25, 0.25, 0.1],
-                    "position": [-0.3, 4.7, 0.62],
-                    "rotation": [4, 6, -3],
-                    "color": [240, 45, 30],
-                    "material": "Neon",
-                    "anchored": True,
-                    "canCollide": False
-                },
-                {
-                    "id": "zb_eye_r",
-                    "name": "EyeRight",
-                    "className": "Part",
-                    "shape": "Block",
-                    "size": [0.22, 0.22, 0.1],
-                    "position": [0.3, 4.65, 0.62],
-                    "rotation": [4, 6, -3],
-                    "color": [235, 220, 110],
-                    "material": "SmoothPlastic",
-                    "anchored": True,
-                    "canCollide": False
-                },
-                {
-                    "id": "zb_mouth",
-                    "name": "ZombieSnarl",
-                    "className": "Part",
-                    "shape": "Block",
-                    "size": [0.55, 0.15, 0.1],
-                    "position": [0, 4.22, 0.62],
-                    "rotation": [4, 6, -3],
-                    "color": [35, 25, 20],
-                    "material": "SmoothPlastic",
-                    "anchored": True,
-                    "canCollide": False
-                },
-                {
-                    "id": "zb_arm_l",
-                    "name": "LeftArm",
-                    "className": "Part",
-                    "shape": "Block",
-                    "size": [1.0, 2.0, 1.0],
-                    "position": [-1.5, 3.0, 1.0],
-                    "rotation": [90, 5, 0],
-                    "color": [92, 150, 58],
-                    "material": "SmoothPlastic",
-                    "anchored": True,
-                    "canCollide": True
-                },
-                {
-                    "id": "zb_arm_r",
-                    "name": "RightArm",
-                    "className": "Part",
-                    "shape": "Block",
-                    "size": [1.0, 2.0, 1.0],
-                    "position": [1.5, 3.0, 1.0],
-                    "rotation": [90, -5, 0],
-                    "color": [92, 150, 58],
-                    "material": "SmoothPlastic",
-                    "anchored": True,
-                    "canCollide": True
-                },
-                {
-                    "id": "zb_leg_l",
-                    "name": "LeftLeg",
-                    "className": "Part",
-                    "shape": "Block",
-                    "size": [1.0, 2.0, 1.0],
-                    "position": [-0.5, 1.0, 0],
-                    "rotation": [0, 0, 0],
-                    "color": [42, 48, 65],
-                    "material": "Fabric",
-                    "anchored": True,
-                    "canCollide": True
-                },
-                {
-                    "id": "zb_leg_r",
-                    "name": "RightLeg",
-                    "className": "Part",
-                    "shape": "Block",
-                    "size": [1.0, 2.0, 1.0],
-                    "position": [0.5, 1.0, 0],
-                    "rotation": [0, 0, 0],
-                    "color": [42, 48, 65],
-                    "material": "Fabric",
-                    "anchored": True,
-                    "canCollide": True
-                },
-                {
-                    "id": "zb_ribs",
-                    "name": "ExposedRibcage",
-                    "className": "Part",
-                    "shape": "Block",
-                    "size": [0.7, 0.9, 0.2],
-                    "position": [-0.35, 2.9, 0.52],
-                    "rotation": [0, 0, 0],
-                    "color": [238, 235, 225],
-                    "material": "SmoothPlastic",
-                    "anchored": True,
-                    "canCollide": False
-                }
-            ]
+            "instances": zb_instances
         }
     elif "character" in p or "human" in p or "npc" in p or "dummy" in p:
         return {

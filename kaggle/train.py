@@ -175,6 +175,8 @@ def run_real_training(args, device: str, vram_gb: float):
         "gradient_accumulation_steps": args.grad_accum,
         "num_train_epochs": args.epochs,
         "learning_rate": args.lr,
+        "warmup_ratio": 0.08,
+        "lr_scheduler_type": "cosine",
         "fp16": (device == "cuda"),
         "logging_steps": 10,
         "save_strategy": "epoch",
@@ -266,7 +268,7 @@ def main():
     parser.add_argument("--lora_r", type=int, default=16, help="LoRA rank")
     parser.add_argument("--lora_alpha", type=int, default=32, help="LoRA alpha")
     parser.add_argument("--lora_dropout", type=float, default=0.05, help="LoRA dropout")
-    parser.add_argument("--max_seq_length", type=int, default=1536, help="Maximum sequence length")
+    parser.add_argument("--max_seq_length", type=int, default=2560, help="Maximum sequence length")
     parser.add_argument("--use_4bit", action="store_true", default=True, help="Enable 4-bit QLoRA")
     parser.add_argument("--max_train_samples", type=int, default=None, help="Limit train samples")
     parser.add_argument("--max_val_samples", type=int, default=None, help="Limit validation samples")

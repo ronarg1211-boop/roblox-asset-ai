@@ -289,6 +289,106 @@ MODEL_BLUEPRINTS = [
             {"name": "CrimsonVelvetCap", "className": "Part", "shape": "Ball", "size": [2.8, 1.6, 2.8], "pos": [0, 0.8, 0], "mat": "Fabric", "col": [160, 30, 45]},
             {"name": "FrontInsigniaSapphire", "className": "Part", "shape": "Ball", "size": [0.45, 0.45, 0.45], "pos": [0, 0.4, 1.65], "mat": "Neon", "col": [0, 180, 255]}
         ]
+    },
+
+    # Characters & Zombies (Crucial Domain Blueprints)
+    {
+        "name": "BusinessZombieWithBriefcase",
+        "category": "characters",
+        "keywords": ["zombie", "business zombie", "zombie in suit", "briefcase", "infected businessman", "office zombie", "zombie holding a briefcase", "shredded suit zombie"],
+        "parts": [
+            {"name": "Torso", "className": "Part", "shape": "Block", "size": [2.0, 2.0, 1.0], "pos": [0, 3.0, 0], "mat": "Fabric", "col": [45, 48, 55]},
+            {"name": "Undershirt", "className": "Part", "shape": "Block", "size": [0.8, 1.5, 0.15], "pos": [0, 3.2, 0.52], "mat": "Fabric", "col": [220, 225, 220]},
+            {"name": "TornNecktie", "className": "Part", "shape": "Block", "size": [0.25, 1.2, 0.12], "pos": [0.05, 3.1, 0.6], "mat": "Fabric", "col": [175, 40, 40]},
+            {"name": "SuitLapelLeft", "className": "Part", "shape": "Block", "size": [0.4, 1.6, 0.12], "pos": [-0.55, 3.2, 0.55], "mat": "Fabric", "col": [38, 40, 48]},
+            {"name": "SuitLapelRight", "className": "Part", "shape": "Block", "size": [0.4, 1.6, 0.12], "pos": [0.55, 3.2, 0.55], "mat": "Fabric", "col": [38, 40, 48]},
+            {"name": "LeatherBelt", "className": "Part", "shape": "Block", "size": [2.05, 0.25, 1.05], "pos": [0, 2.1, 0], "mat": "SmoothPlastic", "col": [30, 25, 22]},
+            {"name": "BrassBuckle", "className": "Part", "shape": "Block", "size": [0.35, 0.3, 0.12], "pos": [0, 2.1, 0.55], "mat": "Metal", "col": [215, 175, 55]},
+            {"name": "Head", "className": "Part", "shape": "Block", "size": [1.2, 1.2, 1.2], "pos": [0, 4.6, 0.05], "mat": "SmoothPlastic", "col": [85, 125, 75]},
+            {"name": "LeftEye", "className": "Part", "shape": "Block", "size": [0.24, 0.24, 0.1], "pos": [-0.3, 4.75, 0.65], "mat": "Neon", "col": [255, 50, 40]},
+            {"name": "RightEye", "className": "Part", "shape": "Block", "size": [0.22, 0.22, 0.1], "pos": [0.3, 4.65, 0.65], "mat": "SmoothPlastic", "col": [230, 215, 110]},
+            {"name": "ZombieJaw", "className": "Part", "shape": "Block", "size": [0.65, 0.22, 0.12], "pos": [0, 4.22, 0.65], "mat": "SmoothPlastic", "col": [35, 25, 20]},
+            {"name": "LeftArm", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "pos": [-1.5, 3.1, 0.8], "mat": "SmoothPlastic", "col": [85, 125, 75]},
+            {"name": "TornSleeveLeft", "className": "Part", "shape": "Block", "size": [1.1, 1.2, 1.1], "pos": [-1.5, 3.4, 0.4], "mat": "Fabric", "col": [45, 48, 55]},
+            {"name": "RightArm", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "pos": [1.5, 2.8, 0.2], "mat": "SmoothPlastic", "col": [85, 125, 75]},
+            {"name": "TornSleeveRight", "className": "Part", "shape": "Block", "size": [1.1, 1.3, 1.1], "pos": [1.5, 3.1, 0.1], "mat": "Fabric", "col": [45, 48, 55]},
+            {"name": "Briefcase", "className": "Part", "shape": "Block", "size": [0.6, 1.8, 2.4], "pos": [1.8, 1.4, 0.5], "mat": "WoodPlanks", "col": [85, 45, 25]},
+            {"name": "BriefcaseHandle", "className": "Part", "shape": "Cylinder", "size": [0.15, 0.8, 0.15], "pos": [1.8, 2.35, 0.5], "mat": "Metal", "col": [215, 175, 55]},
+            {"name": "BrassLatchLeft", "className": "Part", "shape": "Block", "size": [0.65, 0.2, 0.3], "pos": [1.8, 1.4, -0.3], "mat": "Metal", "col": [225, 185, 60]},
+            {"name": "BrassLatchRight", "className": "Part", "shape": "Block", "size": [0.65, 0.2, 0.3], "pos": [1.8, 1.4, 1.3], "mat": "Metal", "col": [225, 185, 60]},
+            {"name": "LeftLeg", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "pos": [-0.5, 1.0, 0.1], "mat": "Fabric", "col": [38, 40, 48]},
+            {"name": "RightLeg", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "pos": [0.5, 1.0, -0.1], "mat": "Fabric", "col": [38, 40, 48]},
+            {"name": "LeftShoe", "className": "Part", "shape": "Block", "size": [1.05, 0.4, 1.3], "pos": [-0.5, 0.2, 0.25], "mat": "SmoothPlastic", "col": [20, 18, 18]},
+            {"name": "RightShoe", "className": "Part", "shape": "Block", "size": [1.05, 0.4, 1.3], "pos": [0.5, 0.2, 0.05], "mat": "SmoothPlastic", "col": [20, 18, 18]}
+        ]
+    },
+    {
+        "name": "ClassicRobloxZombie",
+        "category": "characters",
+        "keywords": ["zombie", "classic zombie", "green zombie", "undead", "ghoul", "infected zombie", "roblox zombie"],
+        "parts": [
+            {"name": "Torso", "className": "Part", "shape": "Block", "size": [2.0, 2.0, 1.0], "pos": [0, 3.0, 0], "mat": "Fabric", "col": [60, 95, 100]},
+            {"name": "Head", "className": "Part", "shape": "Block", "size": [1.2, 1.2, 1.2], "pos": [0, 4.6, 0.05], "mat": "SmoothPlastic", "col": [92, 150, 58]},
+            {"name": "GlowEyeLeft", "className": "Part", "shape": "Block", "size": [0.25, 0.25, 0.1], "pos": [-0.3, 4.7, 0.65], "mat": "Neon", "col": [255, 45, 35]},
+            {"name": "EyeRight", "className": "Part", "shape": "Block", "size": [0.22, 0.22, 0.1], "pos": [0.3, 4.65, 0.65], "mat": "SmoothPlastic", "col": [235, 220, 110]},
+            {"name": "ZombieSnarl", "className": "Part", "shape": "Block", "size": [0.55, 0.15, 0.1], "pos": [0, 4.22, 0.65], "mat": "SmoothPlastic", "col": [35, 25, 20]},
+            {"name": "LeftArm", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "pos": [-1.5, 3.1, 0.8], "mat": "SmoothPlastic", "col": [92, 150, 58]},
+            {"name": "RightArm", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "pos": [1.5, 3.0, 0.8], "mat": "SmoothPlastic", "col": [92, 150, 58]},
+            {"name": "LeftLeg", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "pos": [-0.5, 1.0, 0], "mat": "Fabric", "col": [42, 48, 65]},
+            {"name": "RightLeg", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "pos": [0.5, 1.0, 0], "mat": "Fabric", "col": [42, 48, 65]},
+            {"name": "ExposedRibcage", "className": "Part", "shape": "Block", "size": [0.7, 0.9, 0.2], "pos": [-0.35, 2.9, 0.52], "mat": "SmoothPlastic", "col": [238, 235, 225]},
+            {"name": "ToxicSlimeDrip", "className": "Part", "shape": "Ball", "size": [0.25, 0.35, 0.25], "pos": [0.2, 4.0, 0.65], "mat": "Neon", "col": [80, 255, 40]}
+        ]
+    },
+    {
+        "name": "ArmoredPaladinKnight",
+        "category": "characters",
+        "keywords": ["knight", "paladin", "warrior", "armor", "sword and shield", "soldier", "crusader"],
+        "parts": [
+            {"name": "Torso", "className": "Part", "shape": "Block", "size": [2.0, 2.0, 1.0], "pos": [0, 3.0, 0], "mat": "Metal", "col": [160, 165, 175]},
+            {"name": "SteelBreastplate", "className": "Part", "shape": "Block", "size": [1.8, 1.7, 0.2], "pos": [0, 3.1, 0.55], "mat": "Metal", "col": [190, 195, 205]},
+            {"name": "Head", "className": "Part", "shape": "Block", "size": [1.2, 1.2, 1.2], "pos": [0, 4.6, 0], "mat": "Metal", "col": [170, 175, 185]},
+            {"name": "HelmVisorSlit", "className": "Part", "shape": "Block", "size": [0.9, 0.2, 0.15], "pos": [0, 4.65, 0.62], "mat": "SmoothPlastic", "col": [25, 25, 30]},
+            {"name": "RoyalRedPlume", "className": "Part", "shape": "Block", "size": [0.3, 0.8, 1.2], "pos": [0, 5.4, -0.2], "mat": "Fabric", "col": [195, 35, 35]},
+            {"name": "LeftArm", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "pos": [-1.5, 3.0, 0], "mat": "Metal", "col": [150, 155, 165]},
+            {"name": "PauldronLeft", "className": "Part", "shape": "Block", "size": [1.3, 0.6, 1.3], "pos": [-1.6, 3.8, 0], "mat": "Metal", "col": [220, 180, 50]},
+            {"name": "KnightShield", "className": "Part", "shape": "Block", "size": [2.2, 3.0, 0.25], "pos": [-1.8, 2.8, 0.8], "mat": "WoodPlanks", "col": [180, 40, 40]},
+            {"name": "RightArm", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "pos": [1.5, 3.0, 0], "mat": "Metal", "col": [150, 155, 165]},
+            {"name": "PauldronRight", "className": "Part", "shape": "Block", "size": [1.3, 0.6, 1.3], "pos": [1.6, 3.8, 0], "mat": "Metal", "col": [220, 180, 50]},
+            {"name": "SwordHilt", "className": "Part", "shape": "Cylinder", "size": [0.3, 1.2, 0.3], "pos": [1.6, 2.0, 0.8], "mat": "Fabric", "col": [90, 55, 35]},
+            {"name": "SwordCrossguard", "className": "Part", "shape": "Block", "size": [1.4, 0.25, 0.4], "pos": [1.6, 2.4, 1.2], "mat": "Metal", "col": [220, 180, 50]},
+            {"name": "SwordBlade", "className": "Part", "shape": "Block", "size": [0.45, 3.6, 0.12], "pos": [1.6, 3.8, 2.4], "mat": "Metal", "col": [225, 230, 240]},
+            {"name": "LeftLeg", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "pos": [-0.5, 1.0, 0], "mat": "Metal", "col": [140, 145, 155]},
+            {"name": "RightLeg", "className": "Part", "shape": "Block", "size": [1.0, 2.0, 1.0], "pos": [0.5, 1.0, 0], "mat": "Metal", "col": [140, 145, 155]}
+        ]
+    },
+    {
+        "name": "MagicCrystalCore",
+        "category": "props",
+        "keywords": ["crystal", "magic crystal", "core", "energy core", "floating crystal", "runic crystal", "gem"],
+        "parts": [
+            {"name": "StonePedestal", "className": "Part", "shape": "Cylinder", "size": [3.6, 1.4, 3.6], "pos": [0, 0.7, 0], "mat": "Cobblestone", "col": [90, 92, 98]},
+            {"name": "RunicGlowRing", "className": "Part", "shape": "Cylinder", "size": [3.4, 0.05, 3.4], "pos": [0, 1.43, 0], "mat": "Neon", "col": [0, 240, 255]},
+            {"name": "CentralCrystal", "className": "Part", "shape": "Block", "size": [1.8, 3.4, 1.8], "pos": [0, 4.2, 0], "mat": "Neon", "col": [0, 230, 255]},
+            {"name": "OrbitShardTop", "className": "Part", "shape": "Block", "size": [0.6, 1.4, 0.6], "pos": [1.6, 4.8, 1.0], "mat": "Neon", "col": [160, 60, 255]},
+            {"name": "OrbitShardBottom", "className": "Part", "shape": "Block", "size": [0.6, 1.2, 0.6], "pos": [-1.4, 3.2, -1.2], "mat": "Neon", "col": [160, 60, 255]},
+            {"name": "ContainmentRing", "className": "Part", "shape": "Cylinder", "size": [4.4, 0.25, 4.4], "pos": [0, 4.2, 0], "mat": "Metal", "col": [235, 185, 45]}
+        ]
+    },
+    {
+        "name": "RoyalVelvetArmchair",
+        "category": "furniture",
+        "keywords": ["armchair", "throne", "chair", "velvet chair", "royal seat", "furniture"],
+        "parts": [
+            {"name": "SeatFrame", "className": "Part", "shape": "Block", "size": [2.8, 0.4, 2.6], "pos": [0, 1.4, 0], "mat": "WoodPlanks", "col": [80, 50, 30]},
+            {"name": "VelvetCushion", "className": "Part", "shape": "Block", "size": [2.5, 0.6, 2.3], "pos": [0, 1.8, 0.05], "mat": "Fabric", "col": [160, 25, 35]},
+            {"name": "BackrestPanel", "className": "Part", "shape": "Block", "size": [2.8, 3.2, 0.4], "pos": [0, 3.3, -1.2], "mat": "Fabric", "col": [160, 25, 35]},
+            {"name": "BackrestGoldCrest", "className": "Part", "shape": "Ball", "size": [0.8, 0.8, 0.6], "pos": [0, 5.0, -1.3], "mat": "Metal", "col": [225, 185, 45]},
+            {"name": "ArmrestLeft", "className": "Part", "shape": "Block", "size": [0.4, 1.2, 2.4], "pos": [-1.4, 2.3, 0], "mat": "Wood", "col": [90, 55, 35]},
+            {"name": "ArmrestRight", "className": "Part", "shape": "Block", "size": [0.4, 1.2, 2.4], "pos": [1.4, 2.3, 0], "mat": "Wood", "col": [90, 55, 35]},
+            {"name": "Leg_FL", "className": "Part", "shape": "Cylinder", "size": [0.35, 1.3, 0.35], "pos": [-1.2, 0.65, 1.1], "mat": "Wood", "col": [80, 50, 30]},
+            {"name": "Leg_FR", "className": "Part", "shape": "Cylinder", "size": [0.35, 1.3, 0.35], "pos": [1.2, 0.65, 1.1], "mat": "Wood", "col": [80, 50, 30]}
+        ]
     }
 ]
 
@@ -357,6 +457,84 @@ ANIMATION_BLUEPRINTS = [
             {"time": 0.5, "poses": [{"boneName": "ChestLid", "pos": [0, 2.7, -0.4], "rot": [-45, 0, 0]}]},
             {"time": 1.0, "poses": [{"boneName": "ChestLid", "pos": [0, 2.8, -1.0], "rot": [-105, 0, 0]}]},
             {"time": 1.5, "poses": [{"boneName": "ChestLid", "pos": [0, 2.8, -1.0], "rot": [-105, 0, 0]}]}
+        ]
+    },
+    {
+        "name": "ZombieShambleWalk",
+        "keywords": ["zombie walk", "zombie shamble", "undead walk", "creepy shamble", "infected walk", "zombie animation"],
+        "length": 1.8,
+        "loop": True,
+        "priority": "Movement",
+        "keyframes": [
+            {
+                "time": 0.0,
+                "poses": [
+                    {"boneName": "LeftArm", "pos": [-1.5, 3.1, 0.8], "rot": [85, 8, -5]},
+                    {"boneName": "RightArm", "pos": [1.5, 3.0, 0.8], "rot": [92, -6, 4]},
+                    {"boneName": "Head", "pos": [0, 4.6, 0.05], "rot": [6, 12, -8]},
+                    {"boneName": "LeftLeg", "pos": [-0.5, 1.0, 0.2], "rot": [18, 0, 0]},
+                    {"boneName": "RightLeg", "pos": [0.5, 1.0, -0.2], "rot": [-16, 0, 0]},
+                    {"boneName": "Torso", "pos": [0, 2.95, 0], "rot": [8, 4, -3]}
+                ]
+            },
+            {
+                "time": 0.9,
+                "poses": [
+                    {"boneName": "LeftArm", "pos": [-1.5, 3.1, 0.8], "rot": [95, 5, -4]},
+                    {"boneName": "RightArm", "pos": [1.5, 3.0, 0.8], "rot": [84, -8, 3]},
+                    {"boneName": "Head", "pos": [0, 4.6, 0.05], "rot": [4, 15, -10]},
+                    {"boneName": "LeftLeg", "pos": [-0.5, 1.0, -0.2], "rot": [-18, 0, 0]},
+                    {"boneName": "RightLeg", "pos": [0.5, 1.0, 0.2], "rot": [16, 0, 0]},
+                    {"boneName": "Torso", "pos": [0, 3.05, 0], "rot": [6, -3, 2]}
+                ]
+            },
+            {
+                "time": 1.8,
+                "poses": [
+                    {"boneName": "LeftArm", "pos": [-1.5, 3.1, 0.8], "rot": [85, 8, -5]},
+                    {"boneName": "RightArm", "pos": [1.5, 3.0, 0.8], "rot": [92, -6, 4]},
+                    {"boneName": "Head", "pos": [0, 4.6, 0.05], "rot": [6, 12, -8]},
+                    {"boneName": "LeftLeg", "pos": [-0.5, 1.0, 0.2], "rot": [18, 0, 0]},
+                    {"boneName": "RightLeg", "pos": [0.5, 1.0, -0.2], "rot": [-16, 0, 0]},
+                    {"boneName": "Torso", "pos": [0, 2.95, 0], "rot": [8, 4, -3]}
+                ]
+            }
+        ]
+    },
+    {
+        "name": "ZombieLungeAttack",
+        "keywords": ["zombie attack", "zombie lunge", "undead bite", "zombie claw attack", "zombie bite"],
+        "length": 1.2,
+        "loop": False,
+        "priority": "Action",
+        "keyframes": [
+            {
+                "time": 0.0,
+                "poses": [
+                    {"boneName": "Torso", "pos": [0, 3.0, 0], "rot": [-5, 0, 0]},
+                    {"boneName": "LeftArm", "pos": [-1.5, 3.0, 0], "rot": [60, 0, 0]},
+                    {"boneName": "RightArm", "pos": [1.5, 3.0, 0], "rot": [60, 0, 0]},
+                    {"boneName": "Head", "pos": [0, 4.6, 0], "rot": [-10, 0, 0]}
+                ]
+            },
+            {
+                "time": 0.5,
+                "poses": [
+                    {"boneName": "Torso", "pos": [0, 2.8, 0.6], "rot": [30, 0, 0]},
+                    {"boneName": "LeftArm", "pos": [-1.3, 3.1, 1.2], "rot": [110, -20, 0]},
+                    {"boneName": "RightArm", "pos": [1.3, 3.1, 1.2], "rot": [110, 20, 0]},
+                    {"boneName": "Head", "pos": [0, 4.5, 0.7], "rot": [25, 0, 0]}
+                ]
+            },
+            {
+                "time": 1.2,
+                "poses": [
+                    {"boneName": "Torso", "pos": [0, 3.0, 0], "rot": [0, 0, 0]},
+                    {"boneName": "LeftArm", "pos": [-1.5, 3.0, 0.5], "rot": [85, 0, 0]},
+                    {"boneName": "RightArm", "pos": [1.5, 3.0, 0.5], "rot": [85, 0, 0]},
+                    {"boneName": "Head", "pos": [0, 4.6, 0], "rot": [5, 0, 0]}
+                ]
+            }
         ]
     }
 ]
@@ -477,8 +655,8 @@ def main():
     sft_train_path = os.path.join(dataset_dir, "roblox_sft_train.jsonl")
     sft_val_path = os.path.join(dataset_dir, "roblox_sft_val.jsonl")
 
-    num_train = 1200
-    num_val = 150
+    num_train = 2000
+    num_val = 250
 
     print("================================================================")
     print("      ROBLOX ASSET AI - DOMAIN DATASET SYNTHESIS PIPELINE       ")
