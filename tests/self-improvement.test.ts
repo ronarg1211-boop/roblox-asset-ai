@@ -10,6 +10,7 @@ test('Self-Improvement Loop - Progresses Across Iterations and Improves Score', 
     assetType: 'model',
     maxIterations: 3,
     qualityThreshold: 0.90,
+    provider: 'mock',
   });
 
   assert.equal(response.success, true);

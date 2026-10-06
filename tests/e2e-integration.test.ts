@@ -14,6 +14,7 @@ test('E2E Integration - Text Prompt Generation & Self-Improvement Loop', async (
     assetType: 'model',
     maxIterations: 3,
     qualityThreshold: 0.88,
+    provider: 'mock',
   });
 
   assert.equal(response.success, true);
@@ -60,6 +61,7 @@ test('E2E Integration - Reference Image + Text Multimodal Generation', async () 
     assetType: 'model',
     maxIterations: 2,
     qualityThreshold: 0.85,
+    provider: 'mock',
   });
 
   assert.equal(response.success, true);
@@ -77,6 +79,7 @@ test('E2E Integration - Animation Generation & Verification', async () => {
     prompt: 'Make this character wave with a friendly arm motion',
     assetType: 'animation',
     maxIterations: 2,
+    provider: 'mock',
   });
 
   assert.equal(response.success, true);

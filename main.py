@@ -64,6 +64,13 @@ def run_web(port=3000, auto_open=True, dev=False, prod=False):
     print_banner()
     has_node = check_environment()
     
+    # Probe all configured keys and select the Top 5 best models
+    try:
+        from scripts.key_rotator import display_and_select_routes
+        display_and_select_routes(PROJECT_DIR)
+    except Exception as e:
+        print(f"[!] Key probe notice: {e}")
+    
     if not has_node:
         print("[!] Node.js is required to run the Next.js Web Studio.")
         print("[*] Starting standalone Python API server instead...")
@@ -180,11 +187,11 @@ def cli_generate(prompt: str, asset_type: str = "model", out_format: str = "rbxm
             "maxIterations": 3,
             "qualityThreshold": 0.90,
             "stylePreset": "stylized",
-            "provider": "mock"
+            "provider": "frontier"
         }).encode("utf-8")
         
         req = urllib.request.Request(url, data=req_data, headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=15) as res:
+        with urllib.request.urlopen(req, timeout=90) as res:
             data = json.loads(res.read().decode("utf-8"))
             
             if data.get("success"):

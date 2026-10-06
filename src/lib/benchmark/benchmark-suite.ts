@@ -162,7 +162,8 @@ export const BENCHMARK_TEST_SUITE: BenchmarkTestCase[] = [
 
 export async function runRobloxAssetBench(
   modelVersion = 'v0.3-SelfImproving',
-  subsetCount?: number
+  subsetCount?: number,
+  provider?: 'mock' | 'kaggle' | 'frontier'
 ): Promise<ModelBenchmarkScorecard> {
   const orchestrator = new SelfImprovementOrchestrator();
   const testCases = subsetCount ? BENCHMARK_TEST_SUITE.slice(0, subsetCount) : BENCHMARK_TEST_SUITE;
@@ -175,6 +176,7 @@ export async function runRobloxAssetBench(
       assetType: tc.assetType,
       maxIterations: 3,
       qualityThreshold: 0.88,
+      provider: provider || 'mock',
     });
 
     const finalIter = res.iterations[res.iterations.length - 1];
