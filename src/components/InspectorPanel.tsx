@@ -51,6 +51,8 @@ function generateRobloxLuaScript(model: RobloxModelIR): string {
     lines.push(`-- [${index + 1}] ${part.name}`);
     lines.push(`local ${varName} = Instance.new(${JSON.stringify(part.className)})`);
     lines.push(`${varName}.Name = ${JSON.stringify(part.name)}`);
+    lines.push(`${varName}.TopSurface = Enum.SurfaceType.Smooth`);
+    lines.push(`${varName}.BottomSurface = Enum.SurfaceType.Smooth`);
     if (part.size) {
       lines.push(`${varName}.Size = Vector3.new(${part.size[0]}, ${part.size[1]}, ${part.size[2]})`);
     }
@@ -218,9 +220,12 @@ export default function InspectorPanel({
   };
 
   // Handle Asset Download (.rbxmx / .rbxm / json)
-  const handleDownload = async (format: 'rbxmx' | 'rbxm' | 'json') => {
+  const handleDownload = async (
+    format: 'rbxmx' | 'rbxm' | 'json',
+    target: 'model' | 'animation' = 'model'
+  ) => {
     if (!modelIR && !animationIR) return;
-    setDownloadingFormat(format);
+    setDownloadingFormat(`${target}_${format}`);
 
     try {
       const res = await fetch('/api/export', {
@@ -230,6 +235,7 @@ export default function InspectorPanel({
           modelIR: activeRecord?.modelIR || modelIR,
           animationIR: activeRecord?.animationIR || animationIR,
           format,
+          target,
         }),
       });
 
@@ -244,7 +250,9 @@ export default function InspectorPanel({
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const assetName = activeRecord?.modelIR?.name || activeRecord?.animationIR?.name || 'RobloxAsset';
+      const assetName = target === 'animation'
+        ? (activeRecord?.animationIR?.name || animationIR?.name || 'RobloxAnimation')
+        : (activeRecord?.modelIR?.name || modelIR?.name || 'RobloxAsset');
       a.download = `${assetName}.${format}`;
       document.body.appendChild(a);
       a.click();
@@ -686,124 +694,210 @@ export default function InspectorPanel({
 
         {/* TAB 3: DOWNLOAD & EXPORT */}
         {activeTab === 'export' && (
-          <div className="space-y-3">
-            <div className="bg-studio-950 p-3.5 rounded-xl border border-studio-800 space-y-3">
-              <div>
-                <h3 className="text-xs font-semibold text-studio-100 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-roblox-blue" />
-                  Roblox Studio Production Export
-                </h3>
-                <p className="text-[11px] text-studio-400 leading-relaxed mt-1">
-                  Download or paste directly into Roblox Studio. Every asset is verified for valid
-                  CFrames, Part hierarchies, and materials.
-                </p>
-              </div>
-
-              {/* 1-Click Lua Script Copy (Command Bar) */}
-              <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-roblox-blue/40 rounded-xl p-3 space-y-2">
+          <div className="space-y-4">
+            {/* ANIMATION EXPORT SECTION (When animation is available) */}
+            {currentAnimation && (
+              <div className="bg-studio-950 p-3.5 rounded-xl border border-emerald-500/30 space-y-3 shadow-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-                    <Terminal className="w-4 h-4 text-roblox-blue" />
-                    <span>Instant Studio Command Bar</span>
+                    <Sparkles className="w-4 h-4 text-emerald-400" />
+                    <span>Roblox KeyframeSequence Animation</span>
                   </div>
-                  <span className="text-[9px] bg-roblox-blue text-white px-1.5 py-0.5 rounded font-mono font-bold tracking-wider uppercase">
-                    No Files Needed
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded font-mono font-medium">
+                    {currentAnimation.keyframes.length} Keyframes • {(currentAnimation.length || 2.0).toFixed(1)}s
                   </span>
                 </div>
-                <p className="text-[11px] text-studio-300">
-                  Open Roblox Studio, press <kbd className="px-1 py-0.5 bg-studio-900 border border-studio-700 rounded text-[10px] font-mono">View &gt; Command Bar</kbd>, paste this script, and press Enter to instantly spawn!
+                <p className="text-[11px] text-studio-400 leading-relaxed">
+                  Export this animation to Roblox Studio as a native KeyframeSequence instance or run via Command Bar.
                 </p>
-                <div className="flex gap-2 pt-1">
+
+                {/* Instant Animation Command Bar Script */}
+                <div className="flex gap-2">
                   <button
-                    onClick={handleCopyLuaScript}
-                    className="flex-1 py-2 px-3 bg-roblox-blue hover:bg-roblox-blue/90 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow transition"
+                    onClick={() => {
+                      const script = generateRobloxAnimationLuaScript(currentAnimation);
+                      navigator.clipboard.writeText(script);
+                      setCopiedLua(true);
+                      setTimeout(() => setCopiedLua(false), 2200);
+                    }}
+                    className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow transition"
                   >
                     {copiedLua ? (
                       <>
                         <Check className="w-4 h-4 text-white" />
-                        <span>Copied Lua Script!</span>
+                        <span>Copied Animation Script!</span>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-4 h-4" />
-                        <span>Copy Studio Lua Script</span>
+                        <Terminal className="w-4 h-4" />
+                        <span>Copy Animation Command Bar Script</span>
                       </>
                     )}
                   </button>
+
                   <button
-                    onClick={handleDownloadLuaScript}
+                    onClick={() => {
+                      const script = generateRobloxAnimationLuaScript(currentAnimation);
+                      const blob = new Blob([script], { type: 'text/plain;charset=utf-8' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${currentAnimation.name || 'Animation'}.lua`;
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                    }}
                     className="py-2 px-2.5 bg-studio-900 hover:bg-studio-850 text-studio-300 hover:text-white rounded-lg text-xs font-medium border border-studio-750 transition flex items-center gap-1"
-                    title="Download standalone .lua script file"
+                    title="Download standalone .lua script"
                   >
                     <FileText className="w-3.5 h-3.5 text-emerald-400" />
                     <span>.lua</span>
                   </button>
+                </div>
+
+                {/* Animation .rbxmx Download */}
+                <div className="flex gap-2">
                   <button
-                    onClick={() => setShowLuaPreview(!showLuaPreview)}
-                    className="py-2 px-2.5 bg-studio-900 hover:bg-studio-850 text-studio-300 rounded-lg text-xs font-medium border border-studio-750 transition flex items-center gap-1"
-                    title="Toggle Script Preview"
+                    onClick={() => handleDownload('rbxmx', 'animation')}
+                    disabled={downloadingFormat === 'animation_rbxmx'}
+                    className="flex-1 py-2 px-3 bg-studio-900 hover:bg-studio-850 text-studio-100 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 border border-studio-800 transition"
                   >
-                    <Code2 className="w-3.5 h-3.5" />
-                    <span>{showLuaPreview ? 'Hide' : 'Preview'}</span>
+                    <Download className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Download Animation .rbxmx</span>
+                  </button>
+                  <button
+                    onClick={() => handleDownload('json', 'animation')}
+                    className="py-2 px-2.5 bg-studio-900 hover:bg-studio-850 text-studio-300 rounded-lg text-xs font-medium border border-studio-800 transition"
+                    title="Download Animation JSON"
+                  >
+                    <FileCode className="w-3.5 h-3.5 text-studio-400" />
                   </button>
                 </div>
+              </div>
+            )}
 
-                {/* Optional Expandable Lua Code Preview */}
-                {showLuaPreview && currentModel && (
-                  <div className="mt-2 p-2 bg-studio-950 rounded-lg border border-studio-800 text-[10px] font-mono text-studio-300 max-h-48 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap">{generateRobloxLuaScript(currentModel)}</pre>
+            {/* MODEL EXPORT SECTION */}
+            {currentModel && (
+              <div className="bg-studio-950 p-3.5 rounded-xl border border-studio-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-studio-100">
+                    <Box className="w-4 h-4 text-roblox-blue" />
+                    <span>Roblox Studio 3D Model</span>
                   </div>
-                )}
-              </div>
-
-              {/* .rbxmx XML Download */}
-              <button
-                onClick={() => handleDownload('rbxmx')}
-                disabled={downloadingFormat === 'rbxmx'}
-                className="w-full py-2.5 px-3 bg-studio-850 hover:bg-studio-800 text-studio-100 rounded-lg text-xs font-semibold flex items-center justify-between border border-studio-750 transition shadow"
-              >
-                <div className="flex items-center gap-2">
-                  <Download className="w-4 h-4 text-roblox-blue" />
-                  <span>Download .rbxmx (Roblox XML Model)</span>
+                  <span className="text-[10px] bg-studio-900 text-studio-400 border border-studio-800 px-2 py-0.5 rounded font-mono">
+                    {currentModel.instances.length} Parts
+                  </span>
                 </div>
-                <span className="text-[10px] text-roblox-blue uppercase tracking-wider font-mono font-bold">
-                  Recommended
-                </span>
-              </button>
+                <p className="text-[11px] text-studio-400 leading-relaxed">
+                  Download or paste directly into Roblox Studio. 1:1 verified CFrames, PrimaryPart pivot, and smooth surfaces.
+                </p>
 
-              {/* .rbxm Binary Download */}
-              <button
-                onClick={() => handleDownload('rbxm')}
-                disabled={downloadingFormat === 'rbxm'}
-                className="w-full py-2.5 px-3 bg-studio-900 hover:bg-studio-850 text-studio-200 rounded-lg text-xs font-medium flex items-center justify-between border border-studio-800 transition"
-              >
-                <div className="flex items-center gap-2">
-                  <Download className="w-4 h-4 text-studio-400" />
-                  <span>Download .rbxm (Roblox Binary)</span>
+                {/* 1-Click Model Lua Script Copy (Command Bar) */}
+                <div className="bg-gradient-to-r from-blue-950/60 to-purple-950/60 border border-roblox-blue/40 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                      <Terminal className="w-4 h-4 text-roblox-blue" />
+                      <span>Instant Studio Command Bar</span>
+                    </div>
+                    <span className="text-[9px] bg-roblox-blue text-white px-1.5 py-0.5 rounded font-mono font-bold tracking-wider uppercase">
+                      No Files Needed
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-studio-300">
+                    Press <kbd className="px-1 py-0.5 bg-studio-900 border border-studio-700 rounded text-[10px] font-mono">View &gt; Command Bar</kbd> in Roblox Studio, paste, and press Enter to instantly spawn!
+                  </p>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={handleCopyLuaScript}
+                      className="flex-1 py-2 px-3 bg-roblox-blue hover:bg-roblox-blue/90 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow transition"
+                    >
+                      {copiedLua && !currentAnimation ? (
+                        <>
+                          <Check className="w-4 h-4 text-white" />
+                          <span>Copied Model Script!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          <span>Copy Model Lua Script</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={handleDownloadLuaScript}
+                      className="py-2 px-2.5 bg-studio-900 hover:bg-studio-850 text-studio-300 hover:text-white rounded-lg text-xs font-medium border border-studio-750 transition flex items-center gap-1"
+                      title="Download standalone .lua script file"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>.lua</span>
+                    </button>
+                    <button
+                      onClick={() => setShowLuaPreview(!showLuaPreview)}
+                      className="py-2 px-2.5 bg-studio-900 hover:bg-studio-850 text-studio-300 rounded-lg text-xs font-medium border border-studio-750 transition flex items-center gap-1"
+                      title="Toggle Script Preview"
+                    >
+                      <Code2 className="w-3.5 h-3.5" />
+                      <span>{showLuaPreview ? 'Hide' : 'Preview'}</span>
+                    </button>
+                  </div>
+
+                  {showLuaPreview && currentModel && (
+                    <div className="mt-2 p-2 bg-studio-950 rounded-lg border border-studio-800 text-[10px] font-mono text-studio-300 max-h-48 overflow-y-auto">
+                      <pre className="whitespace-pre-wrap">{generateRobloxLuaScript(currentModel)}</pre>
+                    </div>
+                  )}
                 </div>
-                <span className="text-[10px] text-studio-500 uppercase tracking-wider font-mono">
-                  Binary
-                </span>
-              </button>
 
-              {/* Copy / Export JSON IR */}
-              <div className="pt-2 border-t border-studio-850 flex gap-2">
+                {/* .rbxmx XML Download */}
                 <button
-                  onClick={() => handleDownload('json')}
-                  className="flex-1 py-2 px-2.5 bg-studio-900 hover:bg-studio-850 text-studio-300 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 border border-studio-800 transition"
+                  onClick={() => handleDownload('rbxmx', 'model')}
+                  disabled={downloadingFormat === 'model_rbxmx'}
+                  className="w-full py-2.5 px-3 bg-studio-850 hover:bg-studio-800 text-studio-100 rounded-lg text-xs font-semibold flex items-center justify-between border border-studio-750 transition shadow"
                 >
-                  <FileCode className="w-3.5 h-3.5" />
-                  <span>Download JSON IR</span>
+                  <div className="flex items-center gap-2">
+                    <Download className="w-4 h-4 text-roblox-blue" />
+                    <span>Download .rbxmx (Roblox XML Model)</span>
+                  </div>
+                  <span className="text-[10px] text-roblox-blue uppercase tracking-wider font-mono font-bold">
+                    1:1 Studio
+                  </span>
                 </button>
+
+                {/* .rbxm Binary Download */}
                 <button
-                  onClick={handleCopyJson}
-                  className="py-2 px-3 bg-studio-900 hover:bg-studio-850 text-studio-300 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 border border-studio-800 transition"
+                  onClick={() => handleDownload('rbxm', 'model')}
+                  disabled={downloadingFormat === 'model_rbxm'}
+                  className="w-full py-2.5 px-3 bg-studio-900 hover:bg-studio-850 text-studio-200 rounded-lg text-xs font-medium flex items-center justify-between border border-studio-800 transition"
                 >
-                  {copiedJson ? <Check className="w-3.5 h-3.5 text-roblox-green" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedJson ? 'Copied!' : 'Copy JSON'}</span>
+                  <div className="flex items-center gap-2">
+                    <Download className="w-4 h-4 text-studio-400" />
+                    <span>Download .rbxm (Roblox Binary)</span>
+                  </div>
+                  <span className="text-[10px] text-studio-500 uppercase tracking-wider font-mono">
+                    Binary
+                  </span>
                 </button>
+
+                {/* Copy / Export JSON IR */}
+                <div className="pt-2 border-t border-studio-850 flex gap-2">
+                  <button
+                    onClick={() => handleDownload('json', 'model')}
+                    className="flex-1 py-2 px-2.5 bg-studio-900 hover:bg-studio-850 text-studio-300 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 border border-studio-800 transition"
+                  >
+                    <FileCode className="w-3.5 h-3.5" />
+                    <span>Download JSON IR</span>
+                  </button>
+                  <button
+                    onClick={handleCopyJson}
+                    className="py-2 px-3 bg-studio-900 hover:bg-studio-850 text-studio-300 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 border border-studio-800 transition"
+                  >
+                    {copiedJson ? <Check className="w-3.5 h-3.5 text-roblox-green" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedJson ? 'Copied!' : 'Copy JSON'}</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

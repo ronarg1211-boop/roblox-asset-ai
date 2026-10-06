@@ -12,7 +12,7 @@ import { RobloxModelIR, RobloxAnimationIR } from '@/lib/types/roblox';
 
 export async function POST(req: NextRequest) {
   try {
-    const { modelIR, animationIR, format = 'rbxmx' } = await req.json();
+    const { modelIR, animationIR, format = 'rbxmx', target } = await req.json();
 
     if (!modelIR && !animationIR) {
       return NextResponse.json(
@@ -24,14 +24,27 @@ export async function POST(req: NextRequest) {
     const xmlExporter = new RbxmxExporter();
     const binaryExporter = new RbxmExporter();
 
+    const isAnimationExport = target === 'animation' || (!modelIR && Boolean(animationIR));
+
     // Export Animation
-    if (animationIR && !modelIR) {
+    if (isAnimationExport && animationIR) {
       const animVal = validateAnimationIR(animationIR as RobloxAnimationIR);
       if (!animVal.valid) {
         return NextResponse.json(
           { error: 'Animation IR failed schema validation', details: animVal.errors },
           { status: 422 }
         );
+      }
+
+      const safeName = (animationIR.name || 'RobloxAnimation').replace(/[^a-zA-Z0-9_-]/g, '_');
+
+      if (format === 'json') {
+        return new NextResponse(JSON.stringify(animationIR, null, 2), {
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Disposition': `attachment; filename="${safeName}.json"`,
+          },
+        });
       }
 
       const xml = xmlExporter.exportAnimation(animationIR);
@@ -43,7 +56,6 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const safeName = (animationIR.name || 'RobloxAnimation').replace(/[^a-zA-Z0-9_-]/g, '_');
       return new NextResponse(xml, {
         headers: {
           'Content-Type': 'application/xml',

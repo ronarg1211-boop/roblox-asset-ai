@@ -134,6 +134,7 @@ export class RbxmxExporter {
     this.referentMap.clear();
 
     const rootReferent = this.getReferent('root_model');
+    const primaryPartRef = model.primaryPartId ? this.getReferent(model.primaryPartId) : 'null';
 
     const xmlLines: string[] = [];
     xmlLines.push('<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">');
@@ -142,6 +143,7 @@ export class RbxmxExporter {
     xmlLines.push('\t\t<Properties>');
     xmlLines.push(`\t\t\t<string name="Name">${escapeXml(model.name)}</string>`);
     xmlLines.push('\t\t\t<token name="LevelOfDetail">0</token>');
+    xmlLines.push(`\t\t\t<Ref name="PrimaryPart">${primaryPartRef}</Ref>`);
     xmlLines.push('\t\t\t<CoordinateFrame name="ModelMeshCFrame">');
     xmlLines.push('\t\t\t\t<X>0</X><Y>0</Y><Z>0</Z>');
     xmlLines.push('\t\t\t\t<R00>1</R00><R01>0</R01><R02>0</R02>');
@@ -175,6 +177,7 @@ export class RbxmxExporter {
       const [rx, ry, rz] = part.rotation;
       const [cr, cg, cb] = normalizeColor(part.color);
       const [r00, r01, r02, r10, r11, r12, r20, r21, r22] = eulerToMatrix(rx, ry, rz);
+      const uint8Color = ((Math.round(cr * 255) & 0xff) << 16) | ((Math.round(cg * 255) & 0xff) << 8) | (Math.round(cb * 255) & 0xff);
 
       lines.push(`${indent}<Item class="${actualClass}" referent="${referent}">`);
       lines.push(`${indent}\t<Properties>`);
@@ -184,6 +187,12 @@ export class RbxmxExporter {
       lines.push(`${indent}\t\t<float name="Transparency">${(part.transparency ?? 0).toFixed(4)}</float>`);
       lines.push(`${indent}\t\t<float name="Reflectance">${(part.reflectance ?? 0).toFixed(4)}</float>`);
       lines.push(`${indent}\t\t<token name="Material">${materialToken}</token>`);
+      lines.push(`${indent}\t\t<token name="TopSurface">0</token>`);
+      lines.push(`${indent}\t\t<token name="BottomSurface">0</token>`);
+      lines.push(`${indent}\t\t<token name="LeftSurface">0</token>`);
+      lines.push(`${indent}\t\t<token name="RightSurface">0</token>`);
+      lines.push(`${indent}\t\t<token name="FrontSurface">0</token>`);
+      lines.push(`${indent}\t\t<token name="BackSurface">0</token>`);
       if (!isWedge) {
         lines.push(`${indent}\t\t<token name="shape">${shapeToken}</token>`);
       }
@@ -192,6 +201,7 @@ export class RbxmxExporter {
       lines.push(`${indent}\t\t\t<G>${cg.toFixed(6)}</G>`);
       lines.push(`${indent}\t\t\t<B>${cb.toFixed(6)}</B>`);
       lines.push(`${indent}\t\t</Color3>`);
+      lines.push(`${indent}\t\t<Color3uint8 name="Color3uint8">${uint8Color}</Color3uint8>`);
       lines.push(`${indent}\t\t<Vector3 name="size">`);
       lines.push(`${indent}\t\t\t<X>${sx.toFixed(4)}</X>`);
       lines.push(`${indent}\t\t\t<Y>${sy.toFixed(4)}</Y>`);

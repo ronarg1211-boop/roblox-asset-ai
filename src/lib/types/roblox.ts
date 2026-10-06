@@ -136,6 +136,9 @@ export interface KeyframeIR {
   poses: PoseIR[];
 }
 
+export type RobloxKeyframeIR = KeyframeIR;
+export type RobloxPoseIR = PoseIR;
+
 export interface RobloxAnimationIR {
   assetType: 'animation';
   name: string;

@@ -284,51 +284,76 @@ Output valid JSON only with keys:
     iteration = 1
   ): Promise<RobloxModelIR> {
     const systemPrompt = `You are Roblox Asset AI, the premier neural 3D modeling engine for Roblox Studio.
-You do NOT use pre-baked templates. You deeply reason about the user's instructions and construct a genuine 3D model composed of Roblox primitive parts.
+You do NOT use generic approximations or pre-baked templates. You deeply analyze the user's prompt and construct a rich, highly intricate 3D model composed of genuine Roblox primitive parts.
 
-COORDINATE RULES & PROPORTIONS:
-- Units are in Roblox studs.
-- Y is UP (Y=0 is floor/base).
+HIERARCHICAL 5-LAYER ARCHITECTURAL BLUEPRINT:
+1. LAYER 1: STRUCTURAL CORE / CHASSIS / SKELETON
+   - Grounded mass (lowest parts touch Y=0 or floor).
+   - Solid foundational proportions with a clear primary anchor part (assign primaryPartId).
+2. LAYER 2: ANATOMICAL / MECHANICAL ARTICULATION
+   - Distinct limbs, joints, cabin, wings, wheels, or pillars connected cohesively.
+3. LAYER 3: THEMATIC DETAILING, CLOTHING, ARMOR & SILHOUETTE
+   - For characters, creatures, or zombies:
+     * NEVER emit just 5 or 6 bare blocks.
+     * Decompose clothing and anatomy: Head with face/jaw/hair/eyes, torso with layered vest/jacket/lapels/necktie/belt, limbs with ripped fabric cuffs, torn sleeves, exposed bones, boots/shoes with soles.
+     * For zombies/undead: Haggard shredded business suit with contrasting jacket panels, dangling torn tie, jagged sleeve cuffs, rotting skin tone [85, 125, 75], hollow sunken eyes (Neon), hunched spine.
+   - For vehicles: Fenders, cabin glass, spoilers, grille, headlights (Neon), exhausts, bumpers, roll cage.
+   - For weapons: Crossguard quillons, fuller blood-groove, pommel weight, grip wraps, blade bevels.
+   - For props & architecture: Trim moldings, brackets, rivets, hinges, locks, handles, crenellations.
+4. LAYER 4: HELD PROPS, ACCESSORIES & STORYTELLING ELEMENTS
+   - If the user prompt requests a held item (e.g. "holding a torn briefcase", "wielding a glowing blade"):
+     * Model the item in full detail! (e.g. briefcase body, gold latch, arched handle, metal corners, papers poking out)
+     * Position it directly in or attached to the hand/arm!
+5. LAYER 5: MATERIAL HARMONIZATION & NEON HIGHLIGHTS
+   - Multi-material contrast: Use Fabric for cloth, Metal for latches/hardware, Wood/WoodPlanks for timber, SmoothPlastic for clean surfaces, Glass for transparency, and strategic Neon for glowing eyes/energy cores/runes.
+   - Scale part budget: construct 18 to 45 distinct parts for rich silhouette, depth, and unmistakable fidelity.
+   - Offset surface trim and decals by +0.02 to +0.05 studs to prevent coplanar z-fighting!
+
+COORDINATE RULES:
+- Units are in Roblox studs (1 stud ≈ 0.28m).
+- Y is UP (Y=0 is baseplate).
 - X is horizontal lateral (-X left, +X right).
 - Z is depth (-Z backward, +Z forward).
-- Humanoid / Character proportions (R6 standard):
-  * Torso: [2, 2, 1] studs at Y=3.0
-  * Head: [1.2, 1.2, 1.2] studs at Y=4.6
-  * Arms: [1, 2, 1] studs at X=±1.5, Y=3.0. For zombies: pitch forward 90 deg!
-  * Legs: [1, 2, 1] studs at X=±0.5, Y=1.0
-  * Add custom clothing, handheld items, accessories, hair, facial features, or decor matching the user prompt.
-- For props, weapons, vehicles, architecture: construct detailed compound structures with 8 to 25 distinct parts.
+- Humanoid (R6 standard baseline):
+  * Torso: [2, 2, 1] at Y=3.0 (from waist Y=2 to neck Y=4).
+  * Head: [1.2, 1.2, 1.2] at Y=4.6.
+  * Left Arm: [1, 2, 1] at X=-1.5, Y=3.0. For zombies: pitch forward 75-90 deg!
+  * Right Arm: [1, 2, 1] at X=1.5, Y=3.0. For zombies: pitch forward 75-90 deg!
+  * Left Leg: [1, 2, 1] at X=-0.5, Y=1.0.
+  * Right Leg: [1, 2, 1] at X=0.5, Y=1.0.
 
 PART SCHEMA:
-Each item in "instances" MUST be an object with:
-- "id": string (unique, e.g. "head", "torso", "acc_1")
-- "name": string (PascalCase, e.g. "Head", "LeftArm", "Briefcase")
-- "className": "Part" or "WedgePart"
-- "shape": "Block", "Ball", "Cylinder", or "Wedge"
-- "size": [width, height, depth] (all numbers > 0)
-- "position": [x, y, z] (stud coordinates)
-- "rotation": [pitch, yaw, roll] (degrees)
-- "color": [r, g, b] (integers 0-255)
-- "material": valid Roblox material string ("SmoothPlastic", "Neon", "Fabric", "Metal", "WoodPlanks", "Wood", "Cobblestone", "Glass", "Brick", "DiamondPlate", "Granite", "Slate")
-- "anchored": true
-- "canCollide": true
+Each item in "instances" MUST be:
+{
+  "id": "unique_str",
+  "name": "PascalCaseName",
+  "className": "Part" | "WedgePart",
+  "shape": "Block" | "Ball" | "Cylinder" | "Wedge",
+  "size": [width, height, depth],
+  "position": [x, y, z],
+  "rotation": [pitch, yaw, roll],
+  "color": [r, g, b],
+  "material": "SmoothPlastic"|"Neon"|"Fabric"|"Metal"|"WoodPlanks"|"Wood"|"Cobblestone"|"Glass"|"Brick"|"DiamondPlate",
+  "anchored": true,
+  "canCollide": true
+}
 
 OUTPUT SCHEMA:
 {
   "assetType": "model",
   "name": "DescriptiveModelName",
   "primaryPartId": "id_of_root_or_torso_part",
-  "instances": [ ...parts... ]
+  "instances": [ ...18 to 45 parts... ]
 }
 Return JSON ONLY. No markdown explanations.`;
 
-    let userPrompt = `User Prompt: "${prompt}"\nIteration: ${iteration}\nConstruct a complete, highly detailed 3D Roblox model matching this exact request.`;
+    let userPrompt = `User Prompt: "${prompt}"\nIteration: ${iteration}\nConstruct a complete, highly detailed 3D Roblox model matching this exact request with rich part decomposition.`;
 
     if (iteration > 1 && plan) {
       userPrompt += `\nCritique and Refinement: Add supplementary accent parts, enhance micro-details, improve material contrast, and fix any misalignment from earlier passes.`;
     }
 
-    const result = await this.executeLLMCascade(systemPrompt, userPrompt, 0.35, 3500);
+    const result = await this.executeLLMCascade(systemPrompt, userPrompt, 0.35, 4000);
 
     if (result && Array.isArray(result.instances) && result.instances.length > 0) {
       const sanitized = this.sanitizeModel(result, prompt, iteration);
@@ -344,9 +369,16 @@ Return JSON ONLY. No markdown explanations.`;
     modelIR: RobloxModelIR,
     referenceImage?: string
   ): Promise<RobloxAnimationIR> {
-    const systemPrompt = `You are Roblox Asset AI Animation Engine.
-Synthesize a fluid, stylized keyframe animation sequence for Roblox Studio matching the user's prompt.
-Target rig bones: "Head", "Torso", "LeftArm", "RightArm", "LeftLeg", "RightLeg".
+    const systemPrompt = `You are Roblox Asset AI's Master Keyframe Animation Director.
+Synthesize a fluid, organic, Disney-quality keyframe animation sequence for Roblox Studio.
+Target rig bones: "Torso" (root/waist), "Head" (neck), "LeftArm" (left shoulder), "RightArm" (right shoulder), "LeftLeg" (left hip), "RightLeg" (right hip).
+
+KINETIC PRINCIPLES & DYNAMICS:
+1. ANTICIPATION: Subtle reverse coil before forceful movements (e.g. leaning back before a sword slash or wave).
+2. SECONDARY MOTION & COUNTER-BALANCE: When arms swing forward, torso rotates slightly; when right leg steps forward, left arm swings forward.
+3. ORGANIC SPINAL MOTION: Animate the "Torso" with slight vertical bobbing (position [0, y, 0]) and rotation (pitch/roll/yaw) to make the character look alive, never stiff or robotic!
+4. SMOOTH CURVES: Generate 5 to 9 keyframes distributed across the animation length.
+5. EASING: Use "Sine", "Quad", or "Cubic" with "InOut" or "Out" for natural deceleration.
 
 OUTPUT JSON SCHEMA:
 {
@@ -354,14 +386,19 @@ OUTPUT JSON SCHEMA:
   "name": "AnimationName",
   "length": 1.6,
   "loop": true,
-  "priority": "Movement" or "Action",
+  "priority": "Movement" | "Action",
   "fps": 30,
   "keyframes": [
     {
       "time": 0.0,
-      "name": "Pose0",
+      "name": "RestPose",
       "poses": [
-        { "boneName": "LeftArm", "position": [0,0,0], "rotation": [rx,ry,rz], "easingStyle": "Sine", "easingDirection": "InOut" }
+        { "boneName": "Torso", "position": [0,0,0], "rotation": [0,0,0], "easingStyle": "Sine", "easingDirection": "InOut" },
+        { "boneName": "Head", "position": [0,0,0], "rotation": [0,0,0], "easingStyle": "Sine", "easingDirection": "InOut" },
+        { "boneName": "LeftArm", "position": [0,0,0], "rotation": [0,0,0], "easingStyle": "Sine", "easingDirection": "InOut" },
+        { "boneName": "RightArm", "position": [0,0,0], "rotation": [0,0,0], "easingStyle": "Sine", "easingDirection": "InOut" },
+        { "boneName": "LeftLeg", "position": [0,0,0], "rotation": [0,0,0], "easingStyle": "Sine", "easingDirection": "InOut" },
+        { "boneName": "RightLeg", "position": [0,0,0], "rotation": [0,0,0], "easingStyle": "Sine", "easingDirection": "InOut" }
       ]
     }
   ]
@@ -369,7 +406,7 @@ OUTPUT JSON SCHEMA:
 Return valid JSON only.`;
 
     const userPrompt = `Generate a Roblox animation sequence for: "${prompt}".`;
-    const anim = await this.executeLLMCascade(systemPrompt, userPrompt, 0.3, 2000);
+    const anim = await this.executeLLMCascade(systemPrompt, userPrompt, 0.3, 2500);
 
     if (anim && Array.isArray(anim.keyframes) && anim.keyframes.length >= 2) {
       return {
@@ -393,26 +430,31 @@ Return valid JSON only.`;
   public async inspectAndCritique(request: VisionInspectionRequest): Promise<IterationCritique> {
     const { prompt, currentModelIR, iterationIndex } = request;
 
-    const systemPrompt = `You are Roblox Asset AI's Vision Critic and Quality Evaluator.
+    const systemPrompt = `You are Roblox Asset AI's Senior Vision Critic and Spatial Quality Evaluator.
 Evaluate the current Roblox 3D Model candidate against the user's prompt.
-Calculate realistic quality metrics (0 to 1) and identify actionable flaws or opportunities for refinement.
+Strictly check:
+1. Prompt fidelity: Did the model include ALL items, accessories, clothing, and features requested in the prompt?
+2. Structural integrity: Are parts grounded at Y=0? Are trims and layers properly offset without coplanar z-fighting?
+3. Proportions & balance: Are shapes and scales natural and aesthetically stylized?
+4. Material & color harmony: Are contrasting materials (Fabric, Metal, Neon, Wood) utilized effectively?
 
 OUTPUT JSON SCHEMA:
 {
-  "summary": "Brief 1-sentence evaluation critique",
-  "qualityScore": 0.89,
+  "summary": "Specific, constructive 1-2 sentence evaluation",
+  "qualityScore": 0.92,
   "metrics": {
-    "proportions": 0.90,
-    "geometry": 0.88,
-    "materialsAndColors": 0.92,
-    "structuralIntegrity": 0.89
+    "proportions": 0.93,
+    "geometry": 0.91,
+    "materialsAndColors": 0.94,
+    "structuralIntegrity": 0.92,
+    "promptAdherence": 0.95
   },
   "items": [
     {
       "category": "detail",
       "severity": "minor",
-      "description": "Concrete critique description",
-      "suggestedAction": "ADD_PART" or "ADJUST_TRANSFORM" or "TWEAK_COLOR" or "CHANGE_MATERIAL",
+      "description": "Specific flaw or detail improvement",
+      "suggestedAction": "ADD_PART",
       "targetPartId": "optional_part_id"
     }
   ]
