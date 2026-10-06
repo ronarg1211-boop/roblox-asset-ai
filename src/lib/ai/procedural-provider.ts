@@ -18,6 +18,7 @@ import {
   QualityMetrics,
   AssetType,
 } from '../types/roblox';
+import { autoRigModel } from '../roblox/auto-rigger';
 import { RobloxAssetCatalog } from './knowledge/roblox-asset-catalog';
 import { AnimationCatalog } from './knowledge/animation-catalog';
 
@@ -67,7 +68,7 @@ export class ProceduralProvider implements AIProvider {
     const catalogResult = RobloxAssetCatalog.matchAndGenerate(prompt, iteration);
 
     if (catalogResult) {
-      return {
+      const baseModel: RobloxModelIR = {
         assetType: 'model',
         name: catalogResult.name,
         primaryPartId: catalogResult.primaryPartId,
@@ -80,6 +81,7 @@ export class ProceduralProvider implements AIProvider {
           qualityScore: iteration === 1 ? 0.76 : iteration === 2 ? 0.89 : 0.96,
         },
       };
+      return autoRigModel(baseModel, prompt).model;
     }
 
     // Default parametric generator fallback

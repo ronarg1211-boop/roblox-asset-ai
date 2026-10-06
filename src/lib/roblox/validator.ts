@@ -28,6 +28,9 @@ const ALLOWED_ROBLOX_CLASSES = new Set([
   'WeldConstraint',
   'Weld',
   'Motor6D',
+  'Humanoid',
+  'Seat',
+  'VehicleSeat',
   'SpecialMesh',
   'KeyframeSequence',
   'Keyframe',
@@ -107,14 +110,16 @@ export function validateRbxmxXml(xmlContent: string): FileValidationReport {
         // Validate Properties if present
         if (item.Properties) {
           const props = item.Properties;
-          // Check CoordinateFrame
+          // Check CoordinateFrame(s)
           if (props.CoordinateFrame) {
-            const cf = props.CoordinateFrame;
-            const x = parseFloat(cf.X);
-            const y = parseFloat(cf.Y);
-            const z = parseFloat(cf.Z);
-            if (Number.isNaN(x) || Number.isNaN(y) || Number.isNaN(z)) {
-              errors.push(`Invalid CFrame position in referent ${referent}: [${cf.X}, ${cf.Y}, ${cf.Z}]`);
+            const cfList = Array.isArray(props.CoordinateFrame) ? props.CoordinateFrame : [props.CoordinateFrame];
+            for (const cf of cfList) {
+              const x = parseFloat(cf.X);
+              const y = parseFloat(cf.Y);
+              const z = parseFloat(cf.Z);
+              if (Number.isNaN(x) || Number.isNaN(y) || Number.isNaN(z)) {
+                errors.push(`Invalid CFrame position in referent ${referent}: [${cf.X}, ${cf.Y}, ${cf.Z}]`);
+              }
             }
           }
 

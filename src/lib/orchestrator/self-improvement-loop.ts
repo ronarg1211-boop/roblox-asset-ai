@@ -17,6 +17,7 @@ import { ServerPreviewRenderer } from '../renderer/server-preview';
 import { validateModelIR, validateAnimationIR } from '../schema/validation';
 import { RbxmxExporter } from '../roblox/rbxmx-exporter';
 import { validateRbxmxXml } from '../roblox/validator';
+import { autoRigModel } from '../roblox/auto-rigger';
 
 export class SelfImprovementOrchestrator {
   private renderer: ServerPreviewRenderer;
@@ -48,6 +49,9 @@ export class SelfImprovementOrchestrator {
       request.referenceImage,
       1
     );
+
+    // Auto-rig model (humanoid joints, vehicle seats/axles, prop welds)
+    currentModel = autoRigModel(currentModel, request.prompt).model;
 
     // Generate animation if requested
     let currentAnimation: RobloxAnimationIR | undefined = undefined;

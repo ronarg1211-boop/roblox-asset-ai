@@ -16,6 +16,7 @@ import {
   RobloxInstanceIR,
 } from '../types/roblox';
 import { ProceduralProvider } from './procedural-provider';
+import { autoRigModel } from '../roblox/auto-rigger';
 
 interface LLMRoute {
   id: string;
@@ -319,6 +320,14 @@ HIERARCHICAL 5-LAYER ARCHITECTURAL BLUEPRINT:
    - Scale part budget: construct 18 to 45 distinct parts for rich silhouette, depth, and unmistakable fidelity.
    - Offset surface trim and decals by +0.02 to +0.05 studs to prevent coplanar z-fighting!
 
+ROBLOX RIGGING & NAMING DIRECTIVES:
+- For characters / creatures / zombies:
+  * Name the 6 core anatomical parts EXACTLY: "Torso", "Head", "LeftArm", "RightArm", "LeftLeg", "RightLeg".
+  * Name accessories, clothing, and props descriptively: "Briefcase", "BriefcaseHandle", "NeckTie", "SuitLapel", "LeftEye", "RightEye", "Hat", "SwordHilt".
+  * This allows the automatic rig engine to construct standard Motor6D joints and weld all accessories to the proper limbs!
+- For vehicles: Name the main body "Chassis", wheels "Wheel_FL", "Wheel_FR", "Wheel_RL", "Wheel_RR".
+- For props / furniture: Name the primary anchor "Base" or "TableTop" or "Frame".
+
 COORDINATE RULES:
 - Units are in Roblox studs (1 stud ≈ 0.28m).
 - Y is UP (Y=0 is baseplate).
@@ -367,11 +376,12 @@ Return JSON ONLY. No markdown explanations.`;
 
     if (result && Array.isArray(result.instances) && result.instances.length > 0) {
       const sanitized = this.sanitizeModel(result, prompt, iteration);
-      return sanitized;
+      return autoRigModel(sanitized, prompt).model;
     }
 
     // Fallback to domain knowledge if cascade was unreachable
-    return this.fallback.generateModelIR(plan, prompt, referenceImage, iteration);
+    const fallbackModel = await this.fallback.generateModelIR(plan, prompt, referenceImage, iteration);
+    return autoRigModel(fallbackModel, prompt).model;
   }
 
   public async generateAnimationIR(

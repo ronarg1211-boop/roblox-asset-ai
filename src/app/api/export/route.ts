@@ -9,6 +9,7 @@ import { RbxmExporter } from '@/lib/roblox/rbxm-exporter';
 import { validateRbxmxXml, validateRbxmBinary } from '@/lib/roblox/validator';
 import { validateModelIR, validateAnimationIR } from '@/lib/schema/validation';
 import { RobloxModelIR, RobloxAnimationIR } from '@/lib/types/roblox';
+import { autoRigModel } from '@/lib/roblox/auto-rigger';
 
 export async function POST(req: NextRequest) {
   try {
@@ -67,7 +68,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Export Model
-    const model = modelIR as RobloxModelIR;
+    let model = modelIR as RobloxModelIR;
+    // Auto-rig if joints/welds are not yet present
+    const hasRig = model.instances.some((i) => i.className === 'Motor6D' || i.className === 'WeldConstraint');
+    if (!hasRig) {
+      model = autoRigModel(model).model;
+    }
+
     const modelVal = validateModelIR(model);
     if (!modelVal.valid) {
       return NextResponse.json(

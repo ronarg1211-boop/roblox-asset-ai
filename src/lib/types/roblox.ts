@@ -39,6 +39,9 @@ export type RobloxClassName =
   | 'Attachment'
   | 'WeldConstraint'
   | 'Motor6D'
+  | 'Humanoid'
+  | 'Seat'
+  | 'VehicleSeat'
   | 'SpecialMesh'
   | 'KeyframeSequence'
   | 'Keyframe'
@@ -85,6 +88,24 @@ export interface RobloxMotor6DIR extends RobloxBaseInstance {
   c1?: number[];
 }
 
+export interface RobloxHumanoidIR extends RobloxBaseInstance {
+  className: 'Humanoid';
+  health?: number;
+  maxHealth?: number;
+  rigType?: 0 | 1; // 0 = R6, 1 = R15
+}
+
+export interface RobloxSeatIR extends RobloxBaseInstance {
+  className: 'Seat' | 'VehicleSeat';
+  size: [number, number, number];
+  position: [number, number, number];
+  rotation: [number, number, number];
+  color?: [number, number, number];
+  material?: RobloxMaterial;
+  anchored?: boolean;
+  canCollide?: boolean;
+}
+
 export interface RobloxFolderIR extends RobloxBaseInstance {
   className: 'Folder';
 }
@@ -94,6 +115,8 @@ export type RobloxInstanceIR =
   | RobloxAttachmentIR
   | RobloxWeldConstraintIR
   | RobloxMotor6DIR
+  | RobloxHumanoidIR
+  | RobloxSeatIR
   | RobloxFolderIR
   | RobloxModelChildIR;
 

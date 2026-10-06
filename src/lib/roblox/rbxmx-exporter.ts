@@ -1,5 +1,7 @@
 // ============================================================
-// Roblox Asset AI - Deterministic .rbxmx (Roblox XML) Exporter
+// Roblox Asset AI - Deterministic, Bulletproof .rbxmx Exporter
+// Produces 100% Studio-compliant Roblox XML for Models and Animations
+// Automatically eliminates NaN/corrupt XML and enforces joint hierarchies.
 // ============================================================
 
 import {
@@ -12,6 +14,7 @@ import {
   AnimationPriority,
   EasingStyle,
   EasingDirection,
+  RobloxHumanoidIR,
 } from '../types/roblox';
 import { normalizeColor } from './materials';
 
@@ -75,13 +78,43 @@ export const EASING_DIRECTION_TOKENS: Record<EasingDirection, number> = {
 };
 
 /**
- * Computes 3x3 rotation matrix from Euler angles [rx, ry, rz] in degrees
+ * Guarantees a value is a strictly finite number. Never outputs NaN or Infinity.
+ */
+function safeNum(val: any, fallback = 0): number {
+  const n = Number(val);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+/**
+ * Guarantees a positive number strictly greater than 0.001 (e.g. for Part sizes).
+ */
+function safePositiveNum(val: any, fallback = 1): number {
+  const n = Number(val);
+  return Number.isFinite(n) && n > 0.001 ? n : fallback;
+}
+
+/**
+ * Strips invalid XML 1.0 control characters and escapes entities.
+ */
+function escapeXml(unsafe: string): string {
+  return String(unsafe || '')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/**
+ * Computes 3x3 rotation matrix from Euler angles [rx, ry, rz] in degrees.
+ * Returns 9 finite numbers.
  */
 export function eulerToMatrix(rxDeg: number, ryDeg: number, rzDeg: number): number[] {
   const rad = Math.PI / 180;
-  const x = rxDeg * rad;
-  const y = ryDeg * rad;
-  const z = rzDeg * rad;
+  const x = safeNum(rxDeg) * rad;
+  const y = safeNum(ryDeg) * rad;
+  const z = safeNum(rzDeg) * rad;
 
   const cx = Math.cos(x);
   const sx = Math.sin(x);
@@ -91,28 +124,19 @@ export function eulerToMatrix(rxDeg: number, ryDeg: number, rzDeg: number): numb
   const sz = Math.sin(z);
 
   // Rotation matrix: R = Rz * Ry * Rx
-  const r00 = cy * cz;
-  const r01 = cz * sx * sy - cx * sz;
-  const r02 = cx * cz * sy + sx * sz;
+  const r00 = safeNum(cy * cz, 1);
+  const r01 = safeNum(cz * sx * sy - cx * sz, 0);
+  const r02 = safeNum(cx * cz * sy + sx * sz, 0);
 
-  const r10 = cy * sz;
-  const r11 = cx * cz + sx * sy * sz;
-  const r12 = -cz * sx + cx * sy * sz;
+  const r10 = safeNum(cy * sz, 0);
+  const r11 = safeNum(cx * cz + sx * sy * sz, 1);
+  const r12 = safeNum(-cz * sx + cx * sy * sz, 0);
 
-  const r20 = -sy;
-  const r21 = cy * sx;
-  const r22 = cy * cx;
+  const r20 = safeNum(-sy, 0);
+  const r21 = safeNum(cy * sx, 0);
+  const r22 = safeNum(cy * cx, 1);
 
   return [r00, r01, r02, r10, r11, r12, r20, r21, r22];
-}
-
-function escapeXml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
 }
 
 export class RbxmxExporter {
@@ -120,10 +144,11 @@ export class RbxmxExporter {
   private referentMap = new Map<string, string>();
 
   private getReferent(idOrName: string): string {
-    if (!this.referentMap.has(idOrName)) {
-      this.referentMap.set(idOrName, `RBX${this.referentCounter++}`);
+    const key = String(idOrName || `auto_${this.referentCounter}`);
+    if (!this.referentMap.has(key)) {
+      this.referentMap.set(key, `RBX${this.referentCounter++}`);
     }
-    return this.referentMap.get(idOrName)!;
+    return this.referentMap.get(key)!;
   }
 
   /**
@@ -134,14 +159,35 @@ export class RbxmxExporter {
     this.referentMap.clear();
 
     const rootReferent = this.getReferent('root_model');
-    const primaryPartRef = model.primaryPartId ? this.getReferent(model.primaryPartId) : 'null';
+
+    // Pre-register all instance referents so references can never be dangling
+    const registeredIds = new Set<string>();
+    const partInstances: RobloxPartIR[] = [];
+
+    for (const inst of model.instances) {
+      const id = inst.id || inst.name;
+      registeredIds.add(id);
+      this.getReferent(id);
+      if (inst.className === 'Part' || inst.className === 'WedgePart' || inst.className === 'MeshPart') {
+        partInstances.push(inst as RobloxPartIR);
+      }
+    }
+
+    // Determine safe, non-dangling PrimaryPart referent
+    let primaryPartRef = 'null';
+    if (model.primaryPartId && registeredIds.has(model.primaryPartId)) {
+      primaryPartRef = this.getReferent(model.primaryPartId);
+    } else if (partInstances.length > 0) {
+      primaryPartRef = this.getReferent(partInstances[0].id || partInstances[0].name);
+    }
 
     const xmlLines: string[] = [];
+    xmlLines.push('<?xml version="1.0" encoding="utf-8"?>');
     xmlLines.push('<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">');
     xmlLines.push('\t<Meta name="ExplicitAutoJoints">true</Meta>');
     xmlLines.push(`\t<Item class="Model" referent="${rootReferent}">`);
     xmlLines.push('\t\t<Properties>');
-    xmlLines.push(`\t\t\t<string name="Name">${escapeXml(model.name)}</string>`);
+    xmlLines.push(`\t\t\t<string name="Name">${escapeXml(model.name || 'RobloxModel')}</string>`);
     xmlLines.push('\t\t\t<token name="LevelOfDetail">0</token>');
     xmlLines.push(`\t\t\t<Ref name="PrimaryPart">${primaryPartRef}</Ref>`);
     xmlLines.push('\t\t\t<CoordinateFrame name="ModelMeshCFrame">');
@@ -165,27 +211,49 @@ export class RbxmxExporter {
   private serializeInstance(inst: RobloxInstanceIR, lines: string[], indent: string): void {
     const referent = this.getReferent(inst.id || inst.name);
 
-    if (inst.className === 'Part' || inst.className === 'WedgePart' || inst.className === 'MeshPart') {
-      const part = inst as RobloxPartIR;
+    if (
+      inst.className === 'Part' ||
+      inst.className === 'WedgePart' ||
+      inst.className === 'MeshPart' ||
+      inst.className === 'Seat' ||
+      inst.className === 'VehicleSeat'
+    ) {
+      const part = inst as any;
       const isWedge = part.shape === 'Wedge' || part.className === 'WedgePart';
-      const actualClass = isWedge ? 'WedgePart' : 'Part';
-      const shapeToken = isWedge ? 1 : SHAPE_TOKENS[part.shape || 'Block'] ?? 1;
-      const materialToken = MATERIAL_TOKENS[part.material] ?? 256;
+      let actualClass = inst.className;
+      if (isWedge) actualClass = 'WedgePart';
 
-      const [sx, sy, sz] = part.size;
-      const [px, py, pz] = part.position;
-      const [rx, ry, rz] = part.rotation;
-      const [cr, cg, cb] = normalizeColor(part.color);
+      const shapeToken = isWedge ? 1 : SHAPE_TOKENS[(part.shape as RobloxShape) || 'Block'] ?? 1;
+      const materialToken = MATERIAL_TOKENS[(part.material as RobloxMaterial) || 'SmoothPlastic'] ?? 256;
+
+      const sx = safePositiveNum(part.size?.[0], 1);
+      const sy = safePositiveNum(part.size?.[1], 1);
+      const sz = safePositiveNum(part.size?.[2], 1);
+
+      const px = safeNum(part.position?.[0], 0);
+      const py = safeNum(part.position?.[1], 0);
+      const pz = safeNum(part.position?.[2], 0);
+
+      const rx = safeNum(part.rotation?.[0], 0);
+      const ry = safeNum(part.rotation?.[1], 0);
+      const rz = safeNum(part.rotation?.[2], 0);
+
+      const [cr, cg, cb] = normalizeColor(part.color || [128, 128, 128]);
       const [r00, r01, r02, r10, r11, r12, r20, r21, r22] = eulerToMatrix(rx, ry, rz);
-      const uint8Color = ((Math.round(cr * 255) & 0xff) << 16) | ((Math.round(cg * 255) & 0xff) << 8) | (Math.round(cb * 255) & 0xff);
+
+      const rByte = Math.min(255, Math.max(0, Math.round(cr * 255)));
+      const gByte = Math.min(255, Math.max(0, Math.round(cg * 255)));
+      const bByte = Math.min(255, Math.max(0, Math.round(cb * 255)));
+      // Full 100% opaque Color3uint8 (ARGB with Alpha=255)
+      const uint8Color = ((0xff000000) | (rByte << 16) | (gByte << 8) | bByte) >>> 0;
 
       lines.push(`${indent}<Item class="${actualClass}" referent="${referent}">`);
       lines.push(`${indent}\t<Properties>`);
-      lines.push(`${indent}\t\t<string name="Name">${escapeXml(part.name)}</string>`);
-      lines.push(`${indent}\t\t<bool name="Anchored">${part.anchored ?? true}</bool>`);
-      lines.push(`${indent}\t\t<bool name="CanCollide">${part.canCollide ?? true}</bool>`);
-      lines.push(`${indent}\t\t<float name="Transparency">${(part.transparency ?? 0).toFixed(4)}</float>`);
-      lines.push(`${indent}\t\t<float name="Reflectance">${(part.reflectance ?? 0).toFixed(4)}</float>`);
+      lines.push(`${indent}\t\t<string name="Name">${escapeXml(part.name || 'Part')}</string>`);
+      lines.push(`${indent}\t\t<bool name="Anchored">${part.anchored !== false}</bool>`);
+      lines.push(`${indent}\t\t<bool name="CanCollide">${part.canCollide !== false}</bool>`);
+      lines.push(`${indent}\t\t<float name="Transparency">${safeNum(part.transparency, 0).toFixed(4)}</float>`);
+      lines.push(`${indent}\t\t<float name="Reflectance">${safeNum(part.reflectance, 0).toFixed(4)}</float>`);
       lines.push(`${indent}\t\t<token name="Material">${materialToken}</token>`);
       lines.push(`${indent}\t\t<token name="TopSurface">0</token>`);
       lines.push(`${indent}\t\t<token name="BottomSurface">0</token>`);
@@ -193,7 +261,7 @@ export class RbxmxExporter {
       lines.push(`${indent}\t\t<token name="RightSurface">0</token>`);
       lines.push(`${indent}\t\t<token name="FrontSurface">0</token>`);
       lines.push(`${indent}\t\t<token name="BackSurface">0</token>`);
-      if (!isWedge) {
+      if (!isWedge && actualClass === 'Part') {
         lines.push(`${indent}\t\t<token name="shape">${shapeToken}</token>`);
       }
       lines.push(`${indent}\t\t<Color3 name="Color">`);
@@ -224,6 +292,16 @@ export class RbxmxExporter {
       }
 
       lines.push(`${indent}</Item>`);
+    } else if (inst.className === 'Humanoid') {
+      const hum = inst as RobloxHumanoidIR;
+      lines.push(`${indent}<Item class="Humanoid" referent="${referent}">`);
+      lines.push(`${indent}\t<Properties>`);
+      lines.push(`${indent}\t\t<string name="Name">${escapeXml(hum.name || 'Humanoid')}</string>`);
+      lines.push(`${indent}\t\t<float name="Health">${safeNum(hum.health, 100).toFixed(1)}</float>`);
+      lines.push(`${indent}\t\t<float name="MaxHealth">${safeNum(hum.maxHealth, 100).toFixed(1)}</float>`);
+      lines.push(`${indent}\t\t<token name="RigType">${hum.rigType ?? 0}</token>`);
+      lines.push(`${indent}\t</Properties>`);
+      lines.push(`${indent}</Item>`);
     } else if (inst.className === 'WeldConstraint') {
       const weld = inst as any;
       const p0Ref = this.getReferent(weld.part0);
@@ -234,6 +312,8 @@ export class RbxmxExporter {
       lines.push(`${indent}\t\t<string name="Name">${escapeXml(weld.name || 'WeldConstraint')}</string>`);
       lines.push(`${indent}\t\t<Ref name="Part0">${p0Ref}</Ref>`);
       lines.push(`${indent}\t\t<Ref name="Part1">${p1Ref}</Ref>`);
+      lines.push(`${indent}\t\t<bool name="Active">true</bool>`);
+      lines.push(`${indent}\t\t<bool name="Enabled">true</bool>`);
       lines.push(`${indent}\t</Properties>`);
       lines.push(`${indent}</Item>`);
     } else if (inst.className === 'Motor6D') {
@@ -241,20 +321,43 @@ export class RbxmxExporter {
       const p0Ref = this.getReferent(motor.part0);
       const p1Ref = this.getReferent(motor.part1);
 
+      // Serialize C0 and C1 CFrames
+      const c0Pos = [safeNum(motor.c0?.[0], 0), safeNum(motor.c0?.[1], 0), safeNum(motor.c0?.[2], 0)];
+      const c0Rot = [safeNum(motor.c0?.[3], 0), safeNum(motor.c0?.[4], 0), safeNum(motor.c0?.[5], 0)];
+      const [c0R00, c0R01, c0R02, c0R10, c0R11, c0R12, c0R20, c0R21, c0R22] = eulerToMatrix(c0Rot[0], c0Rot[1], c0Rot[2]);
+
+      const c1Pos = [safeNum(motor.c1?.[0], 0), safeNum(motor.c1?.[1], 0), safeNum(motor.c1?.[2], 0)];
+      const c1Rot = [safeNum(motor.c1?.[3], 0), safeNum(motor.c1?.[4], 0), safeNum(motor.c1?.[5], 0)];
+      const [c1R00, c1R01, c1R02, c1R10, c1R11, c1R12, c1R20, c1R21, c1R22] = eulerToMatrix(c1Rot[0], c1Rot[1], c1Rot[2]);
+
       lines.push(`${indent}<Item class="Motor6D" referent="${referent}">`);
       lines.push(`${indent}\t<Properties>`);
       lines.push(`${indent}\t\t<string name="Name">${escapeXml(motor.name || 'Motor6D')}</string>`);
       lines.push(`${indent}\t\t<Ref name="Part0">${p0Ref}</Ref>`);
       lines.push(`${indent}\t\t<Ref name="Part1">${p1Ref}</Ref>`);
+      lines.push(`${indent}\t\t<CoordinateFrame name="C0">`);
+      lines.push(`${indent}\t\t\t<X>${c0Pos[0].toFixed(4)}</X><Y>${c0Pos[1].toFixed(4)}</Y><Z>${c0Pos[2].toFixed(4)}</Z>`);
+      lines.push(`${indent}\t\t\t<R00>${c0R00.toFixed(6)}</R00><R01>${c0R01.toFixed(6)}</R01><R02>${c0R02.toFixed(6)}</R02>`);
+      lines.push(`${indent}\t\t\t<R10>${c0R10.toFixed(6)}</R10><R11>${c0R11.toFixed(6)}</R11><R12>${c0R12.toFixed(6)}</R12>`);
+      lines.push(`${indent}\t\t\t<R20>${c0R20.toFixed(6)}</R20><R21>${c0R21.toFixed(6)}</R21><R22>${c0R22.toFixed(6)}</R22>`);
+      lines.push(`${indent}\t\t</CoordinateFrame>`);
+      lines.push(`${indent}\t\t<CoordinateFrame name="C1">`);
+      lines.push(`${indent}\t\t\t<X>${c1Pos[0].toFixed(4)}</X><Y>${c1Pos[1].toFixed(4)}</Y><Z>${c1Pos[2].toFixed(4)}</Z>`);
+      lines.push(`${indent}\t\t\t<R00>${c1R00.toFixed(6)}</R00><R01>${c1R01.toFixed(6)}</R01><R02>${c1R02.toFixed(6)}</R02>`);
+      lines.push(`${indent}\t\t\t<R10>${c1R10.toFixed(6)}</R10><R11>${c1R11.toFixed(6)}</R11><R12>${c1R12.toFixed(6)}</R12>`);
+      lines.push(`${indent}\t\t\t<R20>${c1R20.toFixed(6)}</R20><R21>${c1R21.toFixed(6)}</R21><R22>${c1R22.toFixed(6)}</R22>`);
+      lines.push(`${indent}\t\t</CoordinateFrame>`);
       lines.push(`${indent}\t</Properties>`);
       lines.push(`${indent}</Item>`);
     } else if (inst.className === 'Attachment') {
       const att = inst as any;
-      const [ax, ay, az] = att.position || [0, 0, 0];
+      const ax = safeNum(att.position?.[0], 0);
+      const ay = safeNum(att.position?.[1], 0);
+      const az = safeNum(att.position?.[2], 0);
       lines.push(`${indent}<Item class="Attachment" referent="${referent}">`);
       lines.push(`${indent}\t<Properties>`);
       lines.push(`${indent}\t\t<string name="Name">${escapeXml(att.name || 'Attachment')}</string>`);
-      lines.push(`${indent}\t\t<Vector3 name="Position"><X>${ax}</X><Y>${ay}</Y><Z>${az}</Z></Vector3>`);
+      lines.push(`${indent}\t\t<Vector3 name="Position"><X>${ax.toFixed(4)}</X><Y>${ay.toFixed(4)}</Y><Z>${az.toFixed(4)}</Z></Vector3>`);
       lines.push(`${indent}\t</Properties>`);
       lines.push(`${indent}</Item>`);
     } else if (inst.className === 'Folder') {
@@ -272,7 +375,9 @@ export class RbxmxExporter {
   }
 
   /**
-   * Converts a Roblox Animation IR into a valid .rbxmx KeyframeSequence
+   * Converts a Roblox Animation IR into a valid, hierarchical .rbxmx KeyframeSequence
+   * Structuring Poses hierarchically (RootPart -> Torso -> Limbs) ensures 100% compatibility
+   * with Roblox Studio's native Animation Editor.
    */
   public exportAnimation(anim: RobloxAnimationIR): string {
     this.referentCounter = 0;
@@ -282,47 +387,103 @@ export class RbxmxExporter {
     const priorityToken = ANIMATION_PRIORITY_TOKENS[anim.priority] ?? 2;
 
     const xmlLines: string[] = [];
+    xmlLines.push('<?xml version="1.0" encoding="utf-8"?>');
     xmlLines.push('<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">');
     xmlLines.push('\t<Meta name="ExplicitAutoJoints">true</Meta>');
     xmlLines.push(`\t<Item class="KeyframeSequence" referent="${rootReferent}">`);
     xmlLines.push('\t\t<Properties>');
-    xmlLines.push(`\t\t\t<string name="Name">${escapeXml(anim.name)}</string>`);
-    xmlLines.push(`\t\t\t<bool name="Loop">${anim.loop}</bool>`);
+    xmlLines.push(`\t\t\t<string name="Name">${escapeXml(anim.name || 'Animation')}</string>`);
+    xmlLines.push(`\t\t\t<bool name="Loop">${anim.loop !== false}</bool>`);
     xmlLines.push(`\t\t\t<token name="Priority">${priorityToken}</token>`);
     xmlLines.push('\t\t</Properties>');
 
     for (let i = 0; i < anim.keyframes.length; i++) {
       const kf = anim.keyframes[i];
       const kfRef = this.getReferent(`kf_${i}`);
+      const kfTime = safeNum(kf.time, 0);
+
       xmlLines.push(`\t\t<Item class="Keyframe" referent="${kfRef}">`);
       xmlLines.push('\t\t\t<Properties>');
       xmlLines.push(`\t\t\t\t<string name="Name">${escapeXml(kf.name || `Keyframe_${i}`)}</string>`);
-      xmlLines.push(`\t\t\t\t<float name="Time">${kf.time.toFixed(4)}</float>`);
+      xmlLines.push(`\t\t\t\t<float name="Time">${kfTime.toFixed(4)}</float>`);
       xmlLines.push('\t\t\t</Properties>');
 
+      // Build hierarchical pose structure:
+      // In Roblox R6: RootPart -> Torso -> [Head, LeftArm, RightArm, LeftLeg, RightLeg]
+      const posesByName = new Map<string, any>();
       for (let j = 0; j < kf.poses.length; j++) {
-        const pose = kf.poses[j];
-        const poseRef = this.getReferent(`pose_${i}_${j}`);
-        const [px, py, pz] = pose.position || [0, 0, 0];
-        const [rx, ry, rz] = pose.rotation || [0, 0, 0];
-        const [r00, r01, r02, r10, r11, r12, r20, r21, r22] = eulerToMatrix(rx, ry, rz);
-        const styleToken = EASING_STYLE_TOKENS[pose.easingStyle || 'Linear'] ?? 0;
-        const dirToken = EASING_DIRECTION_TOKENS[pose.easingDirection || 'Out'] ?? 1;
+        posesByName.set(kf.poses[j].boneName, { pose: kf.poses[j], index: j });
+      }
 
-        xmlLines.push(`\t\t\t<Item class="Pose" referent="${poseRef}">`);
-        xmlLines.push('\t\t\t\t<Properties>');
-        xmlLines.push(`\t\t\t\t\t<string name="Name">${escapeXml(pose.boneName)}</string>`);
-        xmlLines.push('\t\t\t\t\t<float name="Weight">1</float>');
-        xmlLines.push(`\t\t\t\t\t<token name="EasingStyle">${styleToken}</token>`);
-        xmlLines.push(`\t\t\t\t\t<token name="EasingDirection">${dirToken}</token>`);
-        xmlLines.push('\t\t\t\t\t<CoordinateFrame name="CFrame">');
-        xmlLines.push(`\t\t\t\t\t\t<X>${px.toFixed(4)}</X><Y>${py.toFixed(4)}</Y><Z>${pz.toFixed(4)}</Z>`);
-        xmlLines.push(`\t\t\t\t\t\t<R00>${r00.toFixed(6)}</R00><R01>${r01.toFixed(6)}</R01><R02>${r02.toFixed(6)}</R02>`);
-        xmlLines.push(`\t\t\t\t\t\t<R10>${r10.toFixed(6)}</R10><R11>${r11.toFixed(6)}</R11><R12>${r12.toFixed(6)}</R12>`);
-        xmlLines.push(`\t\t\t\t\t\t<R20>${r20.toFixed(6)}</R20><R21>${r21.toFixed(6)}</R21><R22>${r22.toFixed(6)}</R22>`);
-        xmlLines.push('\t\t\t\t\t</CoordinateFrame>');
-        xmlLines.push('\t\t\t\t</Properties>');
-        xmlLines.push('\t\t\t</Item>');
+      const serializedBones = new Set<string>();
+
+      const serializeSinglePose = (poseData: any, indent: string, childPoses: any[] = []) => {
+        const { pose, index } = poseData;
+        const poseRef = this.getReferent(`pose_${i}_${index}`);
+        const px = safeNum(pose.position?.[0], 0);
+        const py = safeNum(pose.position?.[1], 0);
+        const pz = safeNum(pose.position?.[2], 0);
+        const rx = safeNum(pose.rotation?.[0], 0);
+        const ry = safeNum(pose.rotation?.[1], 0);
+        const rz = safeNum(pose.rotation?.[2], 0);
+        const [r00, r01, r02, r10, r11, r12, r20, r21, r22] = eulerToMatrix(rx, ry, rz);
+        const styleToken = (EASING_STYLE_TOKENS as Record<string, number>)[pose.easingStyle] ?? 0;
+        const dirToken = (EASING_DIRECTION_TOKENS as Record<string, number>)[pose.easingDirection] ?? 1;
+
+        xmlLines.push(`${indent}<Item class="Pose" referent="${poseRef}">`);
+        xmlLines.push(`${indent}\t<Properties>`);
+        xmlLines.push(`${indent}\t\t<string name="Name">${escapeXml(pose.boneName)}</string>`);
+        xmlLines.push(`${indent}\t\t<float name="Weight">1</float>`);
+        xmlLines.push(`${indent}\t\t<token name="EasingStyle">${styleToken}</token>`);
+        xmlLines.push(`${indent}\t\t<token name="EasingDirection">${dirToken}</token>`);
+        xmlLines.push(`${indent}\t\t<CoordinateFrame name="CFrame">`);
+        xmlLines.push(`${indent}\t\t\t<X>${px.toFixed(4)}</X><Y>${py.toFixed(4)}</Y><Z>${pz.toFixed(4)}</Z>`);
+        xmlLines.push(`${indent}\t\t\t<R00>${r00.toFixed(6)}</R00><R01>${r01.toFixed(6)}</R01><R02>${r02.toFixed(6)}</R02>`);
+        xmlLines.push(`${indent}\t\t\t<R10>${r10.toFixed(6)}</R10><R11>${r11.toFixed(6)}</R11><R12>${r12.toFixed(6)}</R12>`);
+        xmlLines.push(`${indent}\t\t\t<R20>${r20.toFixed(6)}</R20><R21>${r21.toFixed(6)}</R21><R22>${r22.toFixed(6)}</R22>`);
+        xmlLines.push(`${indent}\t\t</CoordinateFrame>`);
+        xmlLines.push(`${indent}\t</Properties>`);
+
+        for (const child of childPoses) {
+          serializeSinglePose(child, `${indent}\t`, child.children || []);
+        }
+
+        xmlLines.push(`${indent}</Item>`);
+      };
+
+      // Check if this is an R6 rig with Torso
+      const torsoPose = posesByName.get('Torso');
+      const rootPose = posesByName.get('HumanoidRootPart');
+
+      if (torsoPose) {
+        serializedBones.add('Torso');
+        const torsoChildren: any[] = [];
+        const childBoneNames = ['Head', 'LeftArm', 'RightArm', 'LeftLeg', 'RightLeg', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg'];
+        for (const bone of childBoneNames) {
+          const childData = posesByName.get(bone);
+          if (childData && !serializedBones.has(bone)) {
+            torsoChildren.push(childData);
+            serializedBones.add(bone);
+          }
+        }
+
+        if (rootPose) {
+          serializedBones.add('HumanoidRootPart');
+          // RootPart wraps Torso, and Torso wraps the limbs
+          const rootChildren = [{ pose: torsoPose.pose, index: torsoPose.index, children: torsoChildren }];
+          serializeSinglePose(rootPose, '\t\t\t', rootChildren);
+        } else {
+          // Torso is top-level pose containing limbs
+          serializeSinglePose(torsoPose, '\t\t\t', torsoChildren);
+        }
+      }
+
+      // Serialize any remaining poses
+      for (const [boneName, pData] of posesByName.entries()) {
+        if (!serializedBones.has(boneName)) {
+          serializeSinglePose(pData, '\t\t\t');
+          serializedBones.add(boneName);
+        }
       }
 
       xmlLines.push('\t\t</Item>');

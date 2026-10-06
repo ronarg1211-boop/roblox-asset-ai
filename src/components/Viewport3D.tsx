@@ -620,7 +620,13 @@ export default function Viewport3D({
     if (shouldRenderModel && modelIR) {
       const parts: RobloxPartIR[] = [];
       const traverse = (inst: RobloxInstanceIR) => {
-        if (inst.className === 'Part' || inst.className === 'WedgePart' || inst.className === 'MeshPart') {
+        if (
+          inst.className === 'Part' ||
+          inst.className === 'WedgePart' ||
+          inst.className === 'MeshPart' ||
+          inst.className === 'Seat' ||
+          inst.className === 'VehicleSeat'
+        ) {
           parts.push(inst as RobloxPartIR);
         }
         if (inst.children) inst.children.forEach(traverse);
