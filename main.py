@@ -24,6 +24,11 @@ import urllib.error
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(line_buffering=True)
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(line_buffering=True)
+
 def print_banner():
     banner = r"""
 =============================================================================
@@ -54,7 +59,7 @@ def check_environment():
     
     return node_installed
 
-def run_web(port=3000, auto_open=True):
+def run_web(port=3000, auto_open=True, dev=False, prod=False):
     """Starts the Roblox Asset AI Web Application."""
     print_banner()
     has_node = check_environment()
@@ -72,9 +77,20 @@ def run_web(port=3000, auto_open=True):
         print("[*] Installing frontend dependencies (npm install)...")
         subprocess.run(["npm", "install"], cwd=PROJECT_DIR, check=True, shell=(os.name == 'nt'))
 
-    # Check if production build exists, otherwise run dev
+    # Check if production build exists (specifically the BUILD_ID file created by 'next build')
     build_dir = os.path.join(PROJECT_DIR, ".next")
-    cmd = ["npm", "run", "dev"] if not os.path.exists(build_dir) else ["npm", "start"]
+    has_prod_build = os.path.exists(os.path.join(build_dir, "BUILD_ID"))
+
+    if prod:
+        if not has_prod_build:
+            print("[*] Production build not found. Running 'npm run build'...")
+            subprocess.run(["npm", "run", "build"], cwd=PROJECT_DIR, check=True, shell=(os.name == 'nt'))
+        cmd = ["npm", "start"]
+    elif dev:
+        cmd = ["npm", "run", "dev"]
+    else:
+        # Default: if production build is ready, use it for fastest startup; otherwise run dev
+        cmd = ["npm", "start"] if has_prod_build else ["npm", "run", "dev"]
 
     print(f"[*] Executing: {' '.join(cmd)}")
     proc = subprocess.Popen(cmd, cwd=PROJECT_DIR, shell=(os.name == 'nt'))
@@ -85,6 +101,17 @@ def run_web(port=3000, auto_open=True):
     
     for _ in range(30):
         time.sleep(1)
+        # Check if the process crashed early
+        if proc.poll() is not None:
+            if cmd == ["npm", "start"]:
+                print("[!] 'npm start' failed (no production build or crashed). Falling back to 'npm run dev'...")
+                cmd = ["npm", "run", "dev"]
+                print(f"[*] Executing: {' '.join(cmd)}")
+                proc = subprocess.Popen(cmd, cwd=PROJECT_DIR, shell=(os.name == 'nt'))
+            else:
+                print(f"[!] Server process exited unexpectedly with code {proc.returncode}.")
+                return
+
         try:
             with urllib.request.urlopen(url, timeout=2) as response:
                 if response.status == 200:
@@ -187,6 +214,8 @@ def cli_generate(prompt: str, asset_type: str = "model", out_format: str = "rbxm
 def main():
     parser = argparse.ArgumentParser(description="Roblox Asset AI - Master Python Application Runner")
     parser.add_argument("--web", action="store_true", help="Launch the full Web Studio UI (Default)")
+    parser.add_argument("--dev", action="store_true", help="Launch in development mode with hot-reloading")
+    parser.add_argument("--prod", action="store_true", help="Launch in optimized production mode")
     parser.add_argument("--kaggle", action="store_true", help="Launch the Kaggle Model Inference Server")
     parser.add_argument("--train", action="store_true", help="Fine-tune the Roblox LLM on Kaggle/GPU")
     parser.add_argument("--benchmark", action="store_true", help="Run the automated RobloxAssetBench")
@@ -209,7 +238,7 @@ def main():
         cli_generate(prompt=args.generate, asset_type=args.type, out_format=args.format)
     else:
         # Default action: run the web studio
-        run_web(port=args.port)
+        run_web(port=args.port, dev=args.dev, prod=args.prod)
 
 if __name__ == "__main__":
     main()
